@@ -31,7 +31,7 @@ public class KeyStorage {
 	// Constructor with fileKey only
 	public KeyStorage(String fileKeyString) {
 		this.fileKeyString = fileKeyString;
-		this.keyStoreFile = new File("C:\\ProgramData\\PROSecurity\\Res\\DataStore.keystore");
+		this.keyStoreFile = new File(System.getenv("LocalAppData") + "\\PROSecurity\\Res\\DataStore.keystore");
 	}
 
 	//Constructor with File path and FileKey
@@ -122,7 +122,6 @@ public class KeyStorage {
 
 	/* Retrieves the SecretKey with Specified entry name and entry password 
 	 * @param entryName: Alias/Name of the entry
-	 * @param secretKey: SecretKey object to be retrieved
 	 * @param entryKeyString: Entry Protection password
 	 * @return Secret Key object if entry is found and given password is correct
 	 * @throws UnrecoverableEntryException: if given password is incorrect
