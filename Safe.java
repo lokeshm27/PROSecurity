@@ -1,20 +1,10 @@
-import java.io.Serializable;
+import javax.crypto.SecretKey;
 
-public class Safe implements Serializable{
-	// Final data
+public class Safe extends SafeData {
 	private static final long serialVersionUID = 1L;
-	
-	public static final int MAC_ONLY = 1;
-	public static final int PWD_ONLY = 2;
-	public static final int TWO_FACT = 3;
-	
-	// Object data
-	private String name;
-	public int lockType;
-	public String mac;
-	private int size;
-	private String recoveryEmail;
-	private String hint = null;
+
+	private boolean unlocked = false;
+	private SecretKey secretKey;
 	
 	
 	/*
@@ -29,18 +19,10 @@ public class Safe implements Serializable{
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
 	public Safe(String name, int lockType, String mac, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
-		if(lockType == PWD_ONLY) {
-			throw new IllegalArgumentException("Illegal Argument: lockType");
-		}
-		this.name = name;
-		this.lockType = lockType;
-		this.mac = mac;
-		this.size = size;
-		this.recoveryEmail = recoveryEmail;
-		this.hint = hint;
+		super(name, lockType, mac, size, recoveryEmail, hint);
 	}
 	
-	
+
 	/*
 	 * Constructor: Initializes object with safeName and lockType = PWD_ONLY
 	 * 		Use other constructor for other case
@@ -50,81 +32,70 @@ public class Safe implements Serializable{
 	 * @param hint: String Used for password recovery
 	 */
 	public Safe(String name, int size, String recoveryEmail, String hint) {
-		this.name = name;
-		this.lockType = PWD_ONLY;
-		this.size = size;
-		this.recoveryEmail = recoveryEmail;
-		this.hint = hint;
+		super(name, size, recoveryEmail, hint);
+		// TODO
 	}
 	
 	
 	/*
-	 * @return safeName: String
+	 * @return SafeData: Parent class object
 	 */
-	public String getName() {
-		return name;
-	}
-	 
-	
-	/*
-	 *@return lockType: int 
-	 */
-	public int getLockType() {
-		return lockType;
-	}
-	
-	
-	/*
-	 * @return mac: String
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
-	 */
-	public String getMac() throws IllegalAccessException {
-		if(lockType != PWD_ONLY) {
-			return mac;
-		} else {
-			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
-		}
+	public SafeData getSafeData() {
+		return this;
 	}
 
 	
 	/*
-	 * @return size: Int
+	 * sets unlocked to true
 	 */
-	public int getSize() {
-		return size;
+	public void setUnlocked() {
+		unlocked = true;
 	}
-
 	
 	
 	/*
-	 * @return recoveryEmail: String
+	 * sets unlocked to false
 	 */
-	public String getRecoveryEmail() {
-		return recoveryEmail;
+	public void setLocked() {
+		unlocked = false;
 	}
-
-
+	
+	
 	/*
-	 * @return true: if hint is set
-	 * 		   false: if hint is not set i.e. hint == null
+	 * @return true: If unlocked = true
+	 * 		   false: Otherwise
 	 */
-	public boolean isSetHint() {
-		if(hint == null) {
-			return false;
-		}
-		return true;
+	public boolean isUnlocked() {
+		return unlocked;
 	}
 
 	/*
-	 * @return hint: String
+	 * Sets SecretKey Object
 	 * 
-	 * @throws IllegalAccessException: If hint == null
+	 * @param SecretKey
+	 * 
+	 * @throws IllegalArgumentException: If unlocked = true
 	 */
-	public String getHint() throws IllegalAccessException {
-		if(hint == null) {
-			throw new IllegalAccessException("IllegalAccess to hint: Not defined");
+	public void setSecretKey(SecretKey secretKey) throws IllegalArgumentException {
+		if(unlocked) {
+			throw new IllegalArgumentException("IllegalArgument SecretKey: Unlocked = true");
 		}
-		return hint;
+		this.secretKey = secretKey;
+	}
+	
+	
+	/*
+	 * Gets SecretKey Object
+	 * 
+	 * @return SecretKey
+	 * 
+	 * @throws IllegalAccessException: If unlocked = false
+	 */
+	public SecretKey getSecretKey() throws IllegalAccessException {
+		if(!unlocked) {
+			throw new IllegalAccessException("Illegal Access to SecretKey: Unlocked = false");
+		}
+		return secretKey;
 	}
 
 
