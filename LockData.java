@@ -4,9 +4,10 @@ public class LockData implements Serializable {
 	// Final Data
 	private static final long serialVersionUID = 1L;
 	
-	public static final int MAC_ONLY = 1;
-	public static final int PWD_ONLY = 2;
-	public static final int TWO_FACT = 3;
+	// lock type values
+	public static final int PRO_LOCK = 1;
+	public static final int WIN_LOCK = 2;
+	
 	
 	//Object Data
 	private String mac;
@@ -15,25 +16,20 @@ public class LockData implements Serializable {
 	/*
 	 * Constructor: Initializes the object with MAC and lockType
 	 * @param mac: String containing MAC address of the device
-	 * @param lockType: int containing the lockType
-	 * @throws IllegalArgumentException: If lockType = PWD_ONLY
 	 */
-	public LockData(String mac, int lockType) throws IllegalArgumentException {
-		if(lockType == PWD_ONLY) {
-			throw new IllegalArgumentException("Invalid arguments: lockType");
-		}
+	public LockData(String mac) throws IllegalArgumentException {
 		this.mac = mac;
-		this.lockType = lockType;
+		this.lockType = PRO_LOCK;
 	}
 	
 	
 	/*
-	 * Constructor: Initializes object with lockType = PWD_ONLY
+	 * Constructor: Initializes object with lockType = WIN_LOCK
 	 * 
-	 * Use other constructor for other cases
+	 * Use other constructor for other case
 	 */
 	public LockData() {
-		this.lockType = PWD_ONLY;
+		this.lockType = WIN_LOCK;
 	}
 	
 	
@@ -47,15 +43,15 @@ public class LockData implements Serializable {
 	
 	/*
 	 * @return mac: String
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
+	 * @throws IllegalAccessException: If lockType is set to WIN_LOCK
 	 */
 	public String getMac() throws IllegalAccessException {
-		if(lockType != PWD_ONLY) {
+		if(lockType == PRO_LOCK) {
 			return mac;
 		} else {
 			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
 		}
 	}
-
+	
 
 }
