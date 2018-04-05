@@ -14,10 +14,10 @@ public class LockData implements Serializable {
 	private int lockType;
 	
 	/*
-	 * Constructor: Initializes the object with MAC and lockType
+	 * Constructor: Initializes the object with MAC
 	 * @param mac: String containing MAC address of the device
 	 */
-	public LockData(String mac) throws IllegalArgumentException {
+	public LockData(String mac) {
 		this.mac = mac;
 		this.lockType = PRO_LOCK;
 	}
