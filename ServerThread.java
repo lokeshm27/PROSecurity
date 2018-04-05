@@ -39,4 +39,18 @@ public class ServerThread extends Thread {
 			e.printStackTrace();
 		}
 	}
+	
+	/*
+	 * Closes server thread and ends ServerThread
+	 */
+	public void close() {
+		try {
+			server.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+
 }
