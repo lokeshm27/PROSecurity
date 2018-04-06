@@ -21,5 +21,8 @@ public class VolatileBag {
 	//HashMap
 	volatile static HashMap<String, Safe> safes = new HashMap<String, Safe>();
 	
+	//Safes
+	volatile static boolean defaultSafeSet = false;
+	volatile static Safe defaultSafe;
 	
 }
