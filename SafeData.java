@@ -1,4 +1,6 @@
+import java.io.IOException;
 import java.io.Serializable;
+import javax.bluetooth.RemoteDevice;
 
 public class SafeData implements Serializable{
 	// Final data
@@ -11,7 +13,7 @@ public class SafeData implements Serializable{
 	// Object data
 	protected String name;
 	protected int lockType;
-	protected String mac;
+	protected RemoteDevice device;
 	protected int size;
 	protected String recoveryEmail;
 	protected String hint = null;
@@ -27,13 +29,13 @@ public class SafeData implements Serializable{
 	 * 
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
-	public SafeData(String name, int lockType, String mac, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
+	public SafeData(String name, int lockType, RemoteDevice device, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
 		if(lockType == PWD_ONLY) {
 			throw new IllegalArgumentException("Illegal Argument: lockType");
 		}
 		this.name = name;
 		this.lockType = lockType;
-		this.mac = mac;
+		this.device = device;
 		this.size = size;
 		this.recoveryEmail = recoveryEmail;
 		this.hint = hint;
@@ -45,14 +47,12 @@ public class SafeData implements Serializable{
 	 * 		Use other constructor for other case
 	 * 
 	 * @param name: String Safe Name
-	 * @param recoveryEmail: E-Mail address used for device recovery
 	 * @param hint: String Used for password recovery
 	 */
-	public SafeData(String name, int size, String recoveryEmail, String hint) {
+	public SafeData(String name, int size, String hint) {
 		this.name = name;
 		this.lockType = PWD_ONLY;
 		this.size = size;
-		this.recoveryEmail = recoveryEmail;
 		this.hint = hint;
 	}
 	
@@ -79,7 +79,19 @@ public class SafeData implements Serializable{
 	 */
 	public String getMac() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
-			return mac;
+			return device.getBluetoothAddress();
+		} else {
+			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
+		}
+	}
+	
+	public String getDeviceName() throws IllegalAccessException {
+		if(lockType != PWD_ONLY) {
+			try {
+				return device.getFriendlyName(false);
+			} catch (IOException e) {
+				throw new IllegalAccessException("IOExceptio caught while retrieving name: " + e);
+			}
 		} else {
 			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
 		}
@@ -96,9 +108,15 @@ public class SafeData implements Serializable{
 	
 	/*
 	 * @return recoveryEmail: String
+	 * 
+	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
 	 */
-	public String getRecoveryEmail() {
-		return recoveryEmail;
+	public String getRecoveryEmail() throws IllegalAccessException  {
+		if(lockType != PWD_ONLY) {
+			return recoveryEmail; 
+		} else {
+			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
+		}
 	}
 
 

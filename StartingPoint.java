@@ -5,8 +5,6 @@ import java.awt.PopupMenu;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,23 +20,37 @@ import java.net.SocketException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.Calendar;
 import java.util.Properties;
+import java.util.TimeZone;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
+import org.eclipse.swt.widgets.Shell;
 
 public class StartingPoint {
 	
+	public final static String loggerName = "default.runtime";
 
+	static Logger logger;
 	public static int port = 8912;
 	public static String rootPath = System.getenv("LocalAppData") + "\\PROSecurity";
 	public static String resPath = rootPath + "\\Res";
 	public static String tempPath = rootPath + "\\Temp";
 	static FileLock lock = null;
 	static FileChannel channel = null;
-
+	
+	
 	/*
 	 * Starts application in either Server mode or Client mode
 	 * 		Performs File Locking and Port Checking
 	 */
 	@SuppressWarnings("resource")
+
 	public static void main(String args[]) {
 
 		// Check if One-time initialization is required
@@ -107,7 +119,7 @@ public class StartingPoint {
 		}
 
 		if (!ok) {
-			SOptions.showError("PROSecurity - Initialization Error",
+			SOptions.showError(new Shell(), "PROSecurity - Initialization Error",
 					"PROSecurity couldn't craete necessary folders in the path " + System.getenv("LocalAppData")
 							+ " for operation. PROSecurity may require additional Previlages.");
 			System.out.println("Error.!");
@@ -152,12 +164,35 @@ public class StartingPoint {
 
 		System.out.println("Server Mode");
 
-		//TODO Initialize logger
+		// Initialize logger
+		logger = Logger.getLogger(loggerName);
+		Handler fileHandler;
+		try {
+			fileHandler = new FileHandler(rootPath + "\\runtime.log", true);
+			fileHandler.setFormatter(new Formatter() {
+				@Override
+				public String format(LogRecord record) {
+					Calendar date = Calendar.getInstance(TimeZone.getDefault());
+					return record.getSequenceNumber() + "::" + record.getThreadID() + "::" + record.getSourceClassName()
+							+ "::" + record.getSourceMethodName() + "::" + date.getTime() + "::" + record.getLevel()
+							+ "::" + record.getMessage() + "\n";
+				}
+			});
+			fileHandler.setLevel(Level.FINEST);
+			logger.setUseParentHandlers(false);
+			logger.addHandler(fileHandler);
+			logger.setLevel(Level.ALL);
+		} catch (SecurityException e) {
+			// TODO
+		} catch (IOException e) {
+			// TODO
+		}
 		
 		// Start thread to listen for messages
+		logger.info("Initializing server thread");
 		ServerThread serverThread = new ServerThread();
 		serverThread.start();
-		
+		VolatileBag.serverThread = serverThread;
 		//TODO Start Other threads
 		
 		//TODO Process current arguments
@@ -165,8 +200,11 @@ public class StartingPoint {
 		if(msg != null) {
 			new ProcessThread(msg).start();
 		}
+		
 		if(!loginDatFile.exists()) {
+			logger.info("Auto Lock not configured");
 			loginConfigured = false;
+			VolatileBag.status = false;
 		}
 
 		// initialize tray Icon
@@ -176,30 +214,15 @@ public class StartingPoint {
 				PopupMenu menu = new PopupMenu();
 
 				MenuItem safeItem = new MenuItem("Safes");
-				MenuItem loginItem = new MenuItem("Auto Login");
+				MenuItem loginItem = new MenuItem("Auto Lock");
 				MenuItem settingsItem = new MenuItem("Settings");
 				MenuItem aboutItem = new MenuItem("About PROSecurity");
 				MenuItem exitItem = new MenuItem("Exit");
 
 				// TODO Add action listener to MenuItems
 				
-				exitItem.addActionListener(new ActionListener() {
-					
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						if(SOptions.showConfirm("PROSecurity - Exit?", "Are you sure to exit PRO-Security?")) {
-							// Clean up operations
-							try {
-								serverThread.server.close();
-							} catch (IOException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-							
-							System.exit(0);
-						}
-					}
-				});
+				safeItem.addActionListener(new SafeActionListener());
+				exitItem.addActionListener(new ExitActionListener());
 				
 				menu.add(safeItem);
 				menu.add(loginItem);
@@ -212,6 +235,7 @@ public class StartingPoint {
 				// Initialize Tray Image
 				URL url = null;
 				if (!loginConfigured) {
+					// TODO Show message
 					url = System.class.getResource("/images/yellow-Shield.png");
 				} else {
 					url = System.class.getResource("/images/green-Shield.png");
@@ -223,18 +247,19 @@ public class StartingPoint {
 				// TODO Add ActionListener to TrayIcon
 				
 				SystemTray.getSystemTray().add(trayIcon);
+				logger.fine("Tray Icon has been initialized");
 			} catch (AWTException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.severe("AWT Exception caught: " + e.getMessage());
 			}
 		} else {
-			SOptions.showError("PROSecurity - Error", "Your system does not support tray icon. PROSecurity will continue to work without it.");
+			logger.warning("System does not support tray Icon");
+			SOptions.showError(new Shell(), "PROSecurity - Error", "Your system does not support tray icon. PROSecurity will continue to work without it.");
 		}
 		try {
 			serverThread.join();
+			// TODO Wait for other threads
 		} catch (InterruptedException e) {
-			//TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("Main thread has been interrupted: " + e.getMessage());
 		}
 	}
 
@@ -285,7 +310,7 @@ public class StartingPoint {
 			} catch (SocketException e) {
 				// TODO Add option to go to settings
 				
-				SOptions.showError("PROSecurity - Error", "Another instance of PRO Security is already running, but we are unable to establish communication with it or we recieved unexcepted response.\n"
+				SOptions.showError(new Shell(), "PROSecurity - Error", "Another instance of PRO Security is already running, but we are unable to establish communication with it or we recieved unexcepted response.\n"
 						+ "This may be due to mismatch of Port address or some other application may be using the Port: " + port + "\n" 
 						+ "Go to settings to change the Port Address");
 			} catch (ClassNotFoundException e) {
@@ -301,6 +326,7 @@ public class StartingPoint {
 			e.printStackTrace();
 		}
 	}
+	
 	
 	/* TODO
 	 * Formats the arguments

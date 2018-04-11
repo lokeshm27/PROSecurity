@@ -3,14 +3,21 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.Logger;
+
+import org.eclipse.swt.widgets.Shell;
 
 public class ProcessThread extends Thread {
+	
+	public final static String loggerName = "default.runtime";
 
+	static Logger logger;
 	boolean useSocket = false;
 	Socket socket;
 	ServerSocket server;
 	String message;
 
+	
 	/*
 	 * Constructor:
 	 * 
@@ -23,8 +30,11 @@ public class ProcessThread extends Thread {
 		this.socket = socket;
 		this.server = server;
 		useSocket = true;
+		logger = Logger.getLogger(loggerName);
+		logger.info("Process Thread initialized with socket");
 	}
 
+	
 	/*
 	 * Constructor:
 	 * 
@@ -33,8 +43,14 @@ public class ProcessThread extends Thread {
 
 	public ProcessThread(String msg) {
 		this.message = msg;
+		logger = Logger.getLogger(loggerName);
+		logger.info("Process Thread initialized with message: " + msg);
 	}
 
+	
+	/*
+	 * start process thread
+	 */
 	public void run() {
 		try {
 			if (useSocket) {
@@ -42,7 +58,8 @@ public class ProcessThread extends Thread {
 				ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 
 				String msg = (String) ois.readObject();
-
+				logger.info("Recieved message from socket: " + msg);
+				
 				// Process the message
 				this.message = msg;
 				process();
@@ -55,17 +72,21 @@ public class ProcessThread extends Thread {
 				process();
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.warning("IOException caught: " + e.getMessage());
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warning("ClassNotFoundException caught: " + e.getMessage());
 		}
 	}
 	
+	
+	/*
+	 * Process message
+	 */
 	private void process() {
-		//TODO Complete processing of message
-		SOptions.showInformation("PROSecurity - Message", "A Message recieved : " + this.message);
+		logger.info("Processign message: " + message);
 		
+		//TODO Complete processing of message
+		SOptions.showInformation(new Shell(), "PROSecurity - Message", "A Message recieved : " + this.message);		
 		return;
 	}
 }

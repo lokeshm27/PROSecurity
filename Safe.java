@@ -1,3 +1,4 @@
+import javax.bluetooth.RemoteDevice;
 import javax.crypto.SecretKey;
 
 public class Safe extends SafeData {
@@ -18,8 +19,8 @@ public class Safe extends SafeData {
 	 * 
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
-	public Safe(String name, int lockType, String mac, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
-		super(name, lockType, mac, size, recoveryEmail, hint);
+	public Safe(String name, int lockType, RemoteDevice device, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
+		super(name, lockType, device, size, recoveryEmail, hint);
 	}
 	
 
@@ -31,8 +32,8 @@ public class Safe extends SafeData {
 	 * @param recoveryEmail: E-Mail address used for device recovery
 	 * @param hint: String Used for password recovery
 	 */
-	public Safe(String name, int size, String recoveryEmail, String hint) {
-		super(name, size, recoveryEmail, hint);
+	public Safe(String name, int size, String hint) {
+		super(name, size, hint);
 		// TODO
 	}
 	

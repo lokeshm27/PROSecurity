@@ -13,6 +13,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.logging.Logger;
+
 import javax.crypto.SecretKey;
 
 public class KeyStorage {
@@ -24,6 +26,9 @@ public class KeyStorage {
 	 * Optional KeyStore file path, If not passed, Default KeyStore file will be used
 	 */
 	
+	public final static String loggerName = "default.runtime";
+
+	static Logger logger;
 	private FileInputStream fis = null;
 	private File keyStoreFile = null;
 	private String fileKeyString = null;
@@ -32,12 +37,16 @@ public class KeyStorage {
 	public KeyStorage(String fileKeyString) {
 		this.fileKeyString = fileKeyString;
 		this.keyStoreFile = new File(System.getenv("LocalAppData") + "\\PROSecurity\\Res\\DataStore.keystore");
+		logger = Logger.getLogger(loggerName);
+		logger.info("KeyStorage initialized with FileKey Only");
 	}
 
 	//Constructor with File path and FileKey
 	public KeyStorage(String fileKeyString, String keyStorePath) {
 		this.fileKeyString = fileKeyString;
 		this.keyStoreFile = new File(keyStorePath);
+		logger = Logger.getLogger(loggerName);
+		logger.info("KeyStorage initialized with FileKey and keyStorePath");
 	}
 
 	/* 
