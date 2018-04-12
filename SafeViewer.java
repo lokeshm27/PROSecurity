@@ -1,10 +1,10 @@
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -15,7 +15,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -83,15 +82,12 @@ public class SafeViewer extends SelectionAdapter {
 
 		dialog.open();
 		/*
-		Display display = parent.getDisplay();
-		while (!dialog.isDisposed()) { 
-			if(!display.readAndDispatch()) 
-				display.sleep(); 
-		} */
-		 
+		 * Display display = parent.getDisplay(); while (!dialog.isDisposed()) {
+		 * if(!display.readAndDispatch()) display.sleep(); }
+		 */
+
 	}
 
-	
 	/*
 	 * Constructor to edit safe
 	 */
@@ -100,7 +96,6 @@ public class SafeViewer extends SelectionAdapter {
 		this.safe = safe;
 	}
 
-	
 	/*
 	 * Initializes the basic frame contents
 	 */
@@ -240,17 +235,18 @@ public class SafeViewer extends SelectionAdapter {
 		button3.setLayoutData(gridData);
 
 		dialog.addListener(SWT.Close, new Listener() {
-			
+
 			@Override
 			public void handleEvent(Event event) {
-				if(SOptions.showConfirm(dialog, "Confirm - PROSecurity", "Are you sure to go back and discard all changes?")) {
+				if (SOptions.showConfirm(dialog, "Confirm - PROSecurity",
+						"Are you sure to go back and discard all changes?")) {
 					event.doit = true;
 				} else {
 					event.doit = false;
 				}
 			}
 		});
-		
+
 		chooseButton.addSelectionListener(chooseAdapter);
 		clearButton.addSelectionListener(clearAdapter);
 		sizeScale.addSelectionListener(sizeScaleAdapted);
@@ -258,6 +254,8 @@ public class SafeViewer extends SelectionAdapter {
 		passwordOption.addSelectionListener(passwordAdapter);
 		bothOption.addSelectionListener(bothAdapter);
 		button1.addSelectionListener(button1Adapter);
+		button2.addSelectionListener(button2Adapter);
+		button3.addSelectionListener(button3Adapter);
 		
 	}
 
@@ -265,6 +263,7 @@ public class SafeViewer extends SelectionAdapter {
 	 * Disables/enables all children of the composite recursively
 	 * 
 	 * @param Control: parent composite or group
+	 * 
 	 * @param enbled: boolean
 	 */
 	private void setEnabled(Control ctrl, boolean enabled) {
@@ -278,7 +277,6 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	}
 
-	
 	/*
 	 * SelectionAdapter for choose button
 	 */
@@ -312,7 +310,7 @@ public class SafeViewer extends SelectionAdapter {
 					}
 				}
 			});
-			
+
 			GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 			gridData.grabExcessHorizontalSpace = true;
 			link1.setLayoutData(gridData);
@@ -400,12 +398,12 @@ public class SafeViewer extends SelectionAdapter {
 				retry = SOptions.showConfirm(shell, "Bluetooth Search failed - PROSecurity",
 						"Failed to search for Bluetooth devices as Bluetooth is turned off. Please turn On the Bluetooth and Click 'OK' to retry.");
 			}
-			
-			if(!LocalDevice.isPowerOn()) {
+
+			if (!LocalDevice.isPowerOn()) {
 				shell.dispose();
 				return;
 			}
-			
+
 			try {
 				deviceList = LocalDevice.getLocalDevice().getDiscoveryAgent().retrieveDevices(DiscoveryAgent.PREKNOWN);
 				if (deviceList.length == 0) {
@@ -436,8 +434,6 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-	
-	
 	/*
 	 * 
 	 * SelectionAdapter for clear button
@@ -451,8 +447,6 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-	
-	
 	/*
 	 * Selection adapter for size Scale
 	 */
@@ -463,10 +457,8 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-	
-	
 	/*
-	 * Selection adapter for bluetooth option
+	 * Selection adapter for Bluetooth option
 	 */
 	private SelectionAdapter bluetoothAdapter = new SelectionAdapter() {
 		@Override
@@ -484,8 +476,6 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-
-	
 	/*
 	 * Selection adapter for password option
 	 */
@@ -505,7 +495,6 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-	
 	/*
 	 * Selection adapter for both option
 	 */
@@ -527,19 +516,158 @@ public class SafeViewer extends SelectionAdapter {
 		}
 	};
 
-	
 	/*
-	
-	 
-	 /*
 	 * Selection adapter for back/cancel button
 	 */
 	private SelectionAdapter button1Adapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
-			if(SOptions.showConfirm(dialog, "Confirm - PROSecurity", "Are you sure to go back and discard all changes?")) {
+			if (SOptions.showConfirm(dialog, "Confirm - PROSecurity",
+					"Are you sure to go back and discard all changes?")) {
 				dialog.dispose();
 			}
+		}
+	};
+
+	/*
+	 * Selection adapter for clear/delete button
+	 */
+	private SelectionAdapter button2Adapter = new SelectionAdapter() {
+
+		@Override
+		public void widgetSelected(SelectionEvent arg0) {
+			if (newSafeMode) {
+				if (SOptions.showConfirm(dialog, "Confirm - PROSecurity",
+						"Are sure to clear all fields to default?\nChanges will not be saved.")) {
+					safeName.setText("");
+					sizeLabel.setText(sizeString[4]);
+					sizeScale.setSelection(5);
+					clearAdapter.widgetSelected(null);
+					email.setText("");
+					
+					bluetoothOption.setSelection(true);
+					setEnabled(bluetooth, true);
+					password1.setText("");
+					password2.setText("");
+					hint.setText("");
+					setEnabled(password, false);
+				}
+			} else {
+				// TODO
+			}
+		}
+	};
+	
+	
+	/*
+	 * Selection adapter for add/Update button
+	 */
+	private SelectionAdapter button3Adapter = new SelectionAdapter() {
+
+		@Override
+		public void widgetSelected(SelectionEvent arg0) {
+			if(newSafeMode) {
+				// Validate data
+				
+				// Validating name
+				if(safeName.getText().isEmpty()) {
+					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be empty.!\nPlease enter a valid safe name.");
+					return;
+				}
+				
+				if(nameString.length() > 10) {
+					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be more than 10 characters.!\nPlease enter a valid safe name.");
+					return;
+				}
+				
+				if(!nameString.matches("[-_a-zA-Z0-9 ]*")) {
+					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not contain any special characters except: \'-\' and \'_\'"
+							+ " \nPlease enter a valid safe name.");
+					return;
+				}
+				
+				if(bluetoothOption.getSelection()) {
+					if(!validateBluetooth())
+						return;
+				}
+				
+				if(passwordOption.getSelection()) {
+					if(!validatePassword())
+						return;
+				}
+				
+				if(bothOption.getSelection()) {
+					if(!validateBluetooth())
+						return;
+					
+					if(!validatePassword())
+						return;
+				}
+				
+				SOptions.showInformation(dialog, "Success - PROSecurity", "Data has been validated.!");
+			} else {
+				// TODO
+			}
+			
+			
+		}
+		
+		boolean validateBluetooth() {
+			if(device == null) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Please choose a bluetooth device.!");
+				return false;
+			}
+			
+			if(email.getText().isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity", "E-Mail can not be empty.!"
+						+ "\nPlease enter a valid E-Mail Id");
+				return false;
+			}
+			
+			Pattern ptr = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+			if(!ptr.matcher(email.getText()).find()) {
+ 				SOptions.showError(dialog, "Error - PROSecurity", "Invalid E-Mail Id.!"
+						+ "\nPlease enter a valid E-Mail Id");
+				return false;
+ 			}
+			
+			return true;
+		}
+		
+		boolean validatePassword() {
+			String pwd1 = password1.getText(),pwd2 = password2.getText(),hintString = hint.getText();
+			if(pwd1.isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Password can not be empty.!"
+						+ "\nPlease enter a password");
+				return false;
+			}
+			
+			if(pwd2.isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Password can not be empty.!"
+						+ "\nPlease enter a password");
+				return false;
+			}
+			
+			if(pwd1.length() < 4) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Password should be atleast 4 characters."
+						+ "\nPlease enter a valid password");
+				return false;
+			}
+			
+			if(!pwd1.equals(pwd2)) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Passwords does not match.!"
+						+ "\nPlease check the passwords");
+				return false;
+			}
+			
+			if(hintString.isEmpty()) {
+				if(!SOptions.showConfirm(dialog, "Continue without password hint? - PROSecurity", "Password hint will help you to remember password in case your forgot it."
+						+ "\nAre you sure to continue without password hint?")) {
+					return false;
+				}
+			}
+			
+			return true;
 		}
 	};
 
