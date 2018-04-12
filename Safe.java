@@ -1,4 +1,5 @@
 import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.UUID;
 import javax.crypto.SecretKey;
 
 public class Safe extends SafeData {
@@ -13,14 +14,15 @@ public class Safe extends SafeData {
 	 * 
 	 * @param name: String Safe name
 	 * @param lockType: Int
-	 * @param mac: MAC Address
+	 * @param device: Bluetooth device
+	 * @param service: UUID of service to be used
 	 * @param recoveryEmail: E-Mail address used for device recovery
 	 * @param hint: String Used for password recovery
 	 * 
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
-	public Safe(String name, int lockType, RemoteDevice device, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
-		super(name, lockType, device, size, recoveryEmail, hint);
+	public Safe(String name, int lockType, RemoteDevice device, UUID service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
+		super(name, lockType, device, service, size, recoveryEmail, hint);
 	}
 	
 
@@ -37,6 +39,13 @@ public class Safe extends SafeData {
 		// TODO
 	}
 	
+	/*
+	 * Constructor to Initialize Safe object from SafeData object
+	 * @param SafeData object
+	 */
+	public Safe(SafeData safeData) {
+		super(safeData);
+	}
 	
 	/*
 	 * @return SafeData: Parent class object
