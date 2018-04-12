@@ -566,50 +566,58 @@ public class SafeViewer extends SelectionAdapter {
 
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
+			if(!validateData())
+				return;
+			
 			if(newSafeMode) {
-				// Validate data
 				
-				// Validating name
-				if(safeName.getText().isEmpty()) {
-					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be empty.!\nPlease enter a valid safe name.");
-					return;
-				}
-				
-				if(nameString.length() > 10) {
-					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be more than 10 characters.!\nPlease enter a valid safe name.");
-					return;
-				}
-				
-				if(!nameString.matches("[-_a-zA-Z0-9 ]*")) {
-					SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not contain any special characters except: \'-\' and \'_\'"
-							+ " \nPlease enter a valid safe name.");
-					return;
-				}
-				
-				if(bluetoothOption.getSelection()) {
-					if(!validateBluetooth())
-						return;
-				}
-				
-				if(passwordOption.getSelection()) {
-					if(!validatePassword())
-						return;
-				}
-				
-				if(bothOption.getSelection()) {
-					if(!validateBluetooth())
-						return;
-					
-					if(!validatePassword())
-						return;
-				}
-				
-				SOptions.showInformation(dialog, "Success - PROSecurity", "Data has been validated.!");
 			} else {
 				// TODO
 			}
 			
 			
+		}
+		
+		boolean validateData() {
+			// Validate data
+			
+			// Validating name
+			if(safeName.getText().isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be empty.!\nPlease enter a valid safe name.");
+				return false;
+			}
+			String nameString = safeName.getText();
+			if(nameString.length() > 10) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be more than 10 characters.!\nPlease enter a valid safe name.");
+				return false;
+			}
+			
+			if(!nameString.matches("[-_a-zA-Z0-9 ]*")) {
+				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not contain any special characters except: \'-\' and \'_\'"
+						+ " \nPlease enter a valid safe name.");
+				return false;
+			}
+			
+			if(bluetoothOption.getSelection()) {
+				if(!validateBluetooth())
+					return false;
+			}
+			
+			if(passwordOption.getSelection()) {
+				if(!validatePassword())
+					return false;
+			}
+			
+			if(bothOption.getSelection()) {
+				if(!validateBluetooth())
+					return false;
+				
+				if(!validatePassword())
+					return false;
+			}
+			
+			SOptions.showInformation(dialog, "Success - PROSecurity", "Data has been validated.!");
+			return true;
 		}
 		
 		boolean validateBluetooth() {
