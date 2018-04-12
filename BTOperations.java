@@ -1,3 +1,5 @@
+import java.awt.font.FontRenderContext;
+
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
@@ -10,6 +12,18 @@ import javax.bluetooth.UUID;
 import org.eclipse.swt.widgets.Shell;
 
 public class BTOperations {
+    public final static UUID OBEX_OBJECT_PUSH = new UUID(0x1105);
+    public final static UUID OBEX_FILE_TRANSFER = new UUID(0x1106);
+    public final static UUID HANDS_FREE = new UUID(0x111E);
+    public final static UUID SDP = new UUID(0x001);
+    public final static UUID RFCOMM = new UUID(0x0003);
+    public final static UUID OBEX = new UUID(0x0008);
+    public final static UUID HTTP = new UUID(0x000C);
+    public final static UUID SERIAL_PORT = new UUID(0x1101);
+    public final static UUID PAN_USER = new UUID(0x1115);
+    public final static UUID NETWORK_ACCESS_POINT = new UUID(0x1116);
+    public final static UUID GROUP_NETWORK = new UUID(0x1117);
+	
 	static boolean dontShow = false;
 	static int responseCode;
 
@@ -64,6 +78,19 @@ public class BTOperations {
 		}
 	}
 
+	/*
+	 * Return array of UUIDs supported by our system
+	 * 
+	 * @return array of UUIDs
+	 */
+	public UUID[] getUUIDs() {
+		UUID[] uuids = new UUID[] {
+				OBEX, OBEX_FILE_TRANSFER, OBEX_OBJECT_PUSH, SDP, HANDS_FREE, RFCOMM,
+				HTTP, SERIAL_PORT, PAN_USER, NETWORK_ACCESS_POINT, GROUP_NETWORK
+		};
+		return uuids;
+	}
+	
 	/*
 	 * Checks range of the specified bluetooth device using handshake mechanism
 	 * 
