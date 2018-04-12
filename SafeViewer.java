@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.UUID;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -561,7 +563,7 @@ public class SafeViewer extends SelectionAdapter {
 				return;
 			
 			if(newSafeMode) {
-				
+				// TODO
 			} else {
 				// TODO
 			}

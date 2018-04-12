@@ -1,5 +1,3 @@
-import java.awt.font.FontRenderContext;
-
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
@@ -47,7 +45,7 @@ public class BTOperations {
 			}
 			return LocalDevice.isPowerOn();
 		} else {
-			if (LocalDevice.isPowerOn()) {
+			if (!LocalDevice.isPowerOn()) {
 				if (!dontShow) {
 					SOptions.showInformation(new Shell(), "Bluetooth turnded off - PROSecurity",
 							"As Bluetooth turned off, some functions off PROSecurity may not work"
@@ -83,7 +81,7 @@ public class BTOperations {
 	 * 
 	 * @return array of UUIDs
 	 */
-	public UUID[] getUUIDs() {
+	public static UUID[] getUUIDs() {
 		UUID[] uuids = new UUID[] {
 				OBEX, OBEX_FILE_TRANSFER, OBEX_OBJECT_PUSH, SDP, HANDS_FREE, RFCOMM,
 				HTTP, SERIAL_PORT, PAN_USER, NETWORK_ACCESS_POINT, GROUP_NETWORK
