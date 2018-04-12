@@ -1,9 +1,6 @@
 import java.io.IOException;
 import java.util.regex.Pattern;
-
 import javax.bluetooth.BluetoothStateException;
-import javax.bluetooth.DiscoveryAgent;
-import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -387,25 +384,19 @@ public class SafeViewer extends SelectionAdapter {
 		private void loadList() {
 			boolean firstTime = true;
 			System.out.println("Loading list..");
-			boolean retry = true;
 			if (!link1.getText().equals("<a>Loading list...</a>")) {
 				link1.setText("<a>Refreshing...</a>");
 				busy = true;
 				firstTime = false;
 			}
 
-			while (retry && !LocalDevice.isPowerOn()) {
-				retry = SOptions.showConfirm(shell, "Bluetooth Search failed - PROSecurity",
-						"Failed to search for Bluetooth devices as Bluetooth is turned off. Please turn On the Bluetooth and Click 'OK' to retry.");
-			}
-
-			if (!LocalDevice.isPowerOn()) {
+			if(!BTOperations.isPowerOn(true)) {
 				shell.dispose();
 				return;
 			}
 
 			try {
-				deviceList = LocalDevice.getLocalDevice().getDiscoveryAgent().retrieveDevices(DiscoveryAgent.PREKNOWN);
+				deviceList = BTOperations.getPairedDevices();
 				if (deviceList.length == 0) {
 					SOptions.showError(shell, "Empty - PROSecurity",
 							"No Paired bluetooth devices found.! Please try again.");
