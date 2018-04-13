@@ -3,6 +3,7 @@ import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
+import javax.swing.SwingUtilities;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -14,6 +15,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -50,7 +52,7 @@ public class SafeViewer extends SelectionAdapter {
 	String[] sizeString = { " 0.1 GB ", " 0.25 GB ", " 0.5 GB ", " 0.75 GB ", " 1 GB ", " 1.25 GB", " 1.5 GB ",
 			" 1.75 GB ", " 2 GB " };
 
-	boolean newSafeMode;
+	boolean newSafeMode, serviceFound = false, retry = true;
 
 	/*
 	 * Constructor to add new Safe
@@ -255,7 +257,7 @@ public class SafeViewer extends SelectionAdapter {
 		button1.addSelectionListener(button1Adapter);
 		button2.addSelectionListener(button2Adapter);
 		button3.addSelectionListener(button3Adapter);
-		
+
 	}
 
 	/*
@@ -392,7 +394,7 @@ public class SafeViewer extends SelectionAdapter {
 				firstTime = false;
 			}
 
-			if(!BTOperations.isPowerOn(true)) {
+			if (!BTOperations.isPowerOn(true)) {
 				shell.dispose();
 				return;
 			}
@@ -537,7 +539,7 @@ public class SafeViewer extends SelectionAdapter {
 					sizeScale.setSelection(5);
 					clearAdapter.widgetSelected(null);
 					email.setText("");
-					
+
 					bluetoothOption.setSelection(true);
 					setEnabled(bluetooth, true);
 					password1.setText("");
@@ -550,8 +552,7 @@ public class SafeViewer extends SelectionAdapter {
 			}
 		}
 	};
-	
-	
+
 	/*
 	 * Selection adapter for add/Update button
 	 */
@@ -559,115 +560,171 @@ public class SafeViewer extends SelectionAdapter {
 
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
-			if(!validateData())
+			if (!validateData())
 				return;
-			
-			if(newSafeMode) {
-				// TODO
+
+			if (newSafeMode) {
+				while (retry && !serviceFound) {
+					// Display please wait message
+					Shell messageBox = new Shell(dialog, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
+					messageBox.setText("Creating new safe - PROSecurity");
+					GridLayout layout = new GridLayout();
+					layout.numColumns = 1;
+					layout.marginWidth = 20;
+					layout.marginHeight = 20;
+					messageBox.setLayout(layout);
+
+					new Label(messageBox, SWT.NONE)
+							.setText("Please wait...\nConfiguring bluetooth device. This may take few seconds."
+									+ "\n\nMake sure that bluetooth device is turned on and is within the range.");
+					messageBox.pack();
+					Rectangle screenSize = parent.getDisplay().getPrimaryMonitor().getBounds();
+					messageBox.setLocation((screenSize.width - messageBox.getBounds().width) / 2,
+							(screenSize.height - messageBox.getBounds().height) / 2);
+					messageBox.open();
+
+					// Thread.sleep(2000);
+					UUID[] uuids = BTOperations.getUUIDs();
+					for (int i = 0; i < uuids.length; i++) {
+						System.out.println("Checking for Service: " + uuids[i]);
+						int j = 0;
+						while (j < 3) {
+							if (!BTOperations.checkRange(device, uuids[i]))
+								break;
+							j++;
+							System.out.println("Sleeping ...");
+							// Thread.sleep(200);
+						}
+						if (j == 3) {
+							serviceFound = true;
+							break;
+						}
+					}
+
+					if (serviceFound) {
+						messageBox.dispose();
+						// Create Safe object
+						// Serialize
+						SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 1 Safe creation complete");
+					} else {
+						messageBox.dispose();
+						retry = SOptions.showConfirm(dialog, "Error - PROSecurity",
+								"Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
+										+ "Press 'Ok' to try again");
+					}
+				}
+
+				// TODO Check for duplicate names
+
+				// TODO Stage 2
+
+				// TODO Stage 3
+
 			} else {
 				// TODO
 			}
-			
-			
+
 		}
-		
+
 		boolean validateData() {
 			// Validate data
-			
+
 			// Validating name
-			if(safeName.getText().isEmpty()) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be empty.!\nPlease enter a valid safe name.");
+			if (safeName.getText().isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Safe name can not be empty.!\nPlease enter a valid safe name.");
 				return false;
 			}
 			String nameString = safeName.getText();
-			if(nameString.length() > 10) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not be more than 10 characters.!\nPlease enter a valid safe name.");
+			if (nameString.length() > 10) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Safe name can not be more than 10 characters.!\nPlease enter a valid safe name.");
 				return false;
 			}
-			
-			if(!nameString.matches("[-_a-zA-Z0-9 ]*")) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Safe name can not contain any special characters except: \'-\' and \'_\'"
-						+ " \nPlease enter a valid safe name.");
+
+			if (!nameString.matches("[-_a-zA-Z0-9 ]*")) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Safe name can not contain any special characters except: \'-\' and \'_\'"
+								+ " \nPlease enter a valid safe name.");
 				return false;
 			}
-			
-			if(bluetoothOption.getSelection()) {
-				if(!validateBluetooth())
+
+			if (bluetoothOption.getSelection()) {
+				if (!validateBluetooth())
 					return false;
 			}
-			
-			if(passwordOption.getSelection()) {
-				if(!validatePassword())
+
+			if (passwordOption.getSelection()) {
+				if (!validatePassword())
 					return false;
 			}
-			
-			if(bothOption.getSelection()) {
-				if(!validateBluetooth())
+
+			if (bothOption.getSelection()) {
+				if (!validateBluetooth())
 					return false;
-				
-				if(!validatePassword())
+
+				if (!validatePassword())
 					return false;
 			}
-			
-			SOptions.showInformation(dialog, "Success - PROSecurity", "Data has been validated.!");
 			return true;
 		}
-		
+
 		boolean validateBluetooth() {
-			if(device == null) {
+			if (device == null) {
 				SOptions.showError(dialog, "Error - PROSecurity", "Please choose a bluetooth device.!");
 				return false;
 			}
-			
-			if(email.getText().isEmpty()) {
-				SOptions.showError(dialog, "Error - PROSecurity", "E-Mail can not be empty.!"
-						+ "\nPlease enter a valid E-Mail Id");
+
+			if (email.getText().isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"E-Mail can not be empty.!" + "\nPlease enter a valid E-Mail Id");
 				return false;
 			}
-			
+
 			Pattern ptr = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
-			if(!ptr.matcher(email.getText()).find()) {
- 				SOptions.showError(dialog, "Error - PROSecurity", "Invalid E-Mail Id.!"
-						+ "\nPlease enter a valid E-Mail Id");
+			if (!ptr.matcher(email.getText()).find()) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Invalid E-Mail Id.!" + "\nPlease enter a valid E-Mail Id");
 				return false;
- 			}
-			
+			}
+
 			return true;
 		}
-		
+
 		boolean validatePassword() {
-			String pwd1 = password1.getText(),pwd2 = password2.getText(),hintString = hint.getText();
-			if(pwd1.isEmpty()) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Password can not be empty.!"
-						+ "\nPlease enter a password");
+			String pwd1 = password1.getText(), pwd2 = password2.getText(), hintString = hint.getText();
+			if (pwd1.isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Password can not be empty.!" + "\nPlease enter a password");
 				return false;
 			}
-			
-			if(pwd2.isEmpty()) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Password can not be empty.!"
-						+ "\nPlease enter a password");
+
+			if (pwd2.isEmpty()) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Password can not be empty.!" + "\nPlease enter a password");
 				return false;
 			}
-			
-			if(pwd1.length() < 4) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Password should be atleast 4 characters."
-						+ "\nPlease enter a valid password");
+
+			if (pwd1.length() < 4) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Password should be atleast 4 characters." + "\nPlease enter a valid password");
 				return false;
 			}
-			
-			if(!pwd1.equals(pwd2)) {
-				SOptions.showError(dialog, "Error - PROSecurity", "Passwords does not match.!"
-						+ "\nPlease check the passwords");
+
+			if (!pwd1.equals(pwd2)) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Passwords does not match.!" + "\nPlease check the passwords");
 				return false;
 			}
-			
-			if(hintString.isEmpty()) {
-				if(!SOptions.showConfirm(dialog, "Continue without password hint? - PROSecurity", "Password hint will help you to remember password in case your forgot it."
-						+ "\nAre you sure to continue without password hint?")) {
+
+			if (hintString.isEmpty()) {
+				if (!SOptions.showConfirm(dialog, "Continue without password hint? - PROSecurity",
+						"Password hint will help you to remember password in case your forgot it."
+								+ "\nAre you sure to continue without password hint?")) {
 					return false;
 				}
 			}
-			
+
 			return true;
 		}
 	};
