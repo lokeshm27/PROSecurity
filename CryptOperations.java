@@ -18,7 +18,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.eclipse.swt.widgets.Shell;
 
-public class CryptOperator {
+public class CryptOperations {
 	public final String loggerName = "default.runtime";
 	
 	static int bufferSize = 512*1024; //2Mb buffer
@@ -28,7 +28,7 @@ public class CryptOperator {
 	 * Constructor 
 	 * Initializes logger
 	 */
-	public CryptOperator() {
+	public void init() {
 		logger = Logger.getLogger(loggerName);
 		logger.info("CryptOperator Initialized");
 	}
@@ -38,7 +38,7 @@ public class CryptOperator {
 	 * encryption algorithm using SecureRandom class
 	 * @return byte[] of generated IV
 	 */
-	public byte[] generateIv() {
+	public static byte[] generateIv() {
 		byte[] ivNum = new byte[16];
 		SecureRandom random;
 		try {
@@ -60,7 +60,7 @@ public class CryptOperator {
 	 * @param inputFile String containing path of input file
 	 * @param outputFile String containing path of output file
 	 */
-	public void doOperation(int mode, SecretKey secretKey, String inputFile, String outputFile, byte[] ivNums) {
+	public static void doOperation(int mode, SecretKey secretKey, String inputFile, String outputFile, byte[] ivNums) {
 		try {
 			//Buffers used in IO
 			byte[] inBuffer = new byte[bufferSize];
@@ -115,7 +115,7 @@ public class CryptOperator {
 	 * @param byte[] containing the IV
 	 * @return SecretKey object obtained from specified IV
 	 */
-	public SecretKey toSecretKey(byte[] ivNum) {
+	public static SecretKey toSecretKey(byte[] ivNum) {
 		return new SecretKeySpec(ivNum, 0, ivNum.length, "AES");
 	}
 	
@@ -124,7 +124,7 @@ public class CryptOperator {
 	 * @param SecretKey object to be converted
 	 * @return byte[] converted from specified SecretKey
 	 */
-	public byte[] toByte(SecretKey key) {
+	public static byte[] toByte(SecretKey key) {
 		return key.getEncoded();
 	}
 
