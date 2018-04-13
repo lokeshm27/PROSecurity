@@ -25,12 +25,11 @@ public class CryptOperations {
 	static Logger logger;
 	
 	/*
-	 * Constructor 
 	 * Initializes logger
 	 */
 	public void init() {
 		logger = Logger.getLogger(loggerName);
-		logger.info("CryptOperator Initialized");
+		logger.info("CryptOperations Initialized");
 	}
 	
 	
