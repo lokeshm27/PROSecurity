@@ -25,7 +25,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class SafeViewer extends SelectionAdapter {
-	Safe safe;
+	Safe safe, data;
 
 	Shell dialog, parent;
 	GridLayout dialogLayout, optionsLayout, bluetoothLayout, passwordLayout;
@@ -56,7 +56,7 @@ public class SafeViewer extends SelectionAdapter {
 	Label infoLabel;
 	ProgressBar progressBar;
 	UUID service;
-	String errorMsg;
+	String errorMsg = "Unknown error occured. Please try again.", passwordString;
 	Thread configureThread;
 
 	/*
@@ -567,7 +567,7 @@ public class SafeViewer extends SelectionAdapter {
 		public void widgetSelected(SelectionEvent arg0) {
 			if (!validateData())
 				return;
-			
+
 			// Display please wait frame
 			messageBox = new Shell(dialog, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
 			messageBox.setText("Creating new safe - PROSecurity");
@@ -604,22 +604,35 @@ public class SafeViewer extends SelectionAdapter {
 					infoLabel.setText("Aborting operation... ");
 				}
 			});
-			
+
 			messageBox.pack();
 			Rectangle screenSize = parent.getDisplay().getPrimaryMonitor().getBounds();
 			messageBox.setLocation((screenSize.width - messageBox.getBounds().width) / 2,
 					(screenSize.height - messageBox.getBounds().height) / 2);
 			messageBox.open();
 
-			
+			// Read fields and pack it in data object
+			if (bluetoothOption.getSelection()) {
+				data = new Safe(safeName.getText(), Safe.MAC_ONLY, device, null, sizeInt[sizeScale.getSelection() - 1],
+						email.getText(), null);
+			} else if (passwordOption.getSelection()) {
+				data = new Safe(safeName.getText(), sizeInt[sizeScale.getSelection() - 1], hint.getText());
+				passwordString = password1.getText();
+			} else {
+				// Both option
+				data = new Safe(safeName.getText(), Safe.TWO_FACT, device, null, sizeInt[sizeScale.getSelection() - 1],
+						email.getText(), hint.getText());
+				passwordString = password1.getText();
+			}
+
 			if (newSafeMode) {
-								
+
 				// Starting thread
 				cancel = false;
 				configured = false;
 				configureThread = new Thread(newSafeRun);
 				configureThread.start();
-				
+
 				// Wait for thread to finish
 				while (!messageBox.isDisposed() && configureThread.isAlive()) {
 					if (!messageBox.getDisplay().readAndDispatch()) {
@@ -627,12 +640,14 @@ public class SafeViewer extends SelectionAdapter {
 					}
 				}
 				messageBox.dispose();
-				
+
 				if (configured) {
-					messageBox.dispose();
+					// messageBox.dispose();
 					SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 1 Safe creation complete");
+					dialog.dispose();
+					return;
 				} else {
-					messageBox.dispose();
+					// messageBox.dispose();
 					if (!cancel) {
 						SOptions.showError(dialog, "Error - PROSecurity", errorMsg);
 					}
@@ -751,9 +766,11 @@ public class SafeViewer extends SelectionAdapter {
 	 */
 	Runnable newSafeRun = new Runnable() {
 		public void run() {
+			System.out.println("Starting thread...");
 			int count, i;
 			String info;
-			if (!passwordOption.getSelection()) {
+			if (data.getLockType() != Safe.PWD_ONLY) {
+				System.out.println("Configuring device...");
 				UUID[] uuid = BTOperations.getUUIDs();
 				// Creating safe data + Updating in volatile bag + Creating safe + encrypting +
 				// starting threads
@@ -765,6 +782,7 @@ public class SafeViewer extends SelectionAdapter {
 					Thread.sleep(2000);
 				} catch (InterruptedException e) {
 					// TODO Logging statements
+					e.printStackTrace();
 				}
 
 				i = 0;
@@ -790,6 +808,7 @@ public class SafeViewer extends SelectionAdapter {
 						i++;
 					} catch (InterruptedException e) {
 						// TODO Logging statements
+						e.printStackTrace();
 					}
 				}
 
@@ -806,6 +825,7 @@ public class SafeViewer extends SelectionAdapter {
 				info = "Storing information...";
 				updateProgress(i, info);
 			}
+			System.out.println("Complete...");
 			disableCancel();
 
 			// TODO Check for duplicate names
@@ -817,6 +837,11 @@ public class SafeViewer extends SelectionAdapter {
 			// TODO Stage 3
 
 			updateFinish();
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO
+			}
 			return;
 		}
 
@@ -831,11 +856,15 @@ public class SafeViewer extends SelectionAdapter {
 		void updateStart(int count) {
 			messageBox.getDisplay().asyncExec(new Runnable() {
 				public void run() {
-					cancelButton.setEnabled(true);
-					infoLabel.setText("Configuring bluetooth device ...");
-					progressBar.setMinimum(0);
-					progressBar.setMaximum(count);
-					progressBar.setSelection(0);
+					try {
+						cancelButton.setEnabled(true);
+						infoLabel.setText("Configuring bluetooth device ...");
+						progressBar.setMinimum(0);
+						progressBar.setMaximum(count);
+						progressBar.setSelection(0);
+					} catch (Exception e) {
+
+					}
 				}
 			});
 		}
@@ -844,8 +873,12 @@ public class SafeViewer extends SelectionAdapter {
 			messageBox.getDisplay().asyncExec(new Runnable() {
 				@Override
 				public void run() {
-					progressBar.setSelection(value);
-					infoLabel.setText(info);
+					try {
+						progressBar.setSelection(value);
+						infoLabel.setText(info);
+					} catch (Exception e) {
+
+					}
 				}
 			});
 		}
@@ -854,10 +887,14 @@ public class SafeViewer extends SelectionAdapter {
 			messageBox.getDisplay().asyncExec(new Runnable() {
 				@Override
 				public void run() {
-					configured = true;
-					progressBar.setMaximum(1);
-					progressBar.setSelection(1);
-					infoLabel.setText("Finished.");
+					try {
+						configured = true;
+						progressBar.setMaximum(1);
+						progressBar.setSelection(1);
+						infoLabel.setText("Finished.");
+					} catch (Exception e) {
+
+					}
 				}
 			});
 		}
