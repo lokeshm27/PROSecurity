@@ -3,9 +3,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-
-import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.UUID;
 import javax.crypto.SecretKey;
 
 public class Safe extends SafeData {
@@ -28,8 +25,8 @@ public class Safe extends SafeData {
 	 * 
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
-	public Safe(String name, int lockType, RemoteDevice device, UUID service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
-		super(name, lockType, device, service, size, recoveryEmail, hint);
+	public Safe(String name, int lockType, String mac, long service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
+		super(name, lockType, mac, service, size, recoveryEmail, hint);
 	}
 	
 
@@ -127,5 +124,11 @@ public class Safe extends SafeData {
 			return null;
 		}
 	}
+	
+	/* @Override
+	public void serial() {
+		// Do Nothing
+		System.out.println("Child Class method called");
+	} */
 
 }

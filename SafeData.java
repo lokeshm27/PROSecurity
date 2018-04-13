@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.UUID;
-
 public class SafeData implements Serializable{
 	// Final data
 	private static final long serialVersionUID = 1L;
@@ -23,8 +20,8 @@ public class SafeData implements Serializable{
 	// Object data
 	protected String name;
 	protected int lockType;
-	protected RemoteDevice device;
-	protected UUID service;
+	protected String mac;
+	protected long service;
 	protected int size;
 	protected String recoveryEmail;
 	protected String hint = null;
@@ -41,13 +38,13 @@ public class SafeData implements Serializable{
 	 * 
 	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
 	 */
-	public SafeData(String name, int lockType, RemoteDevice device, UUID service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
+	public SafeData(String name, int lockType, String mac, long service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
 		if(lockType == PWD_ONLY) {
 			throw new IllegalArgumentException("Illegal Argument: lockType");
 		}
 		this.name = name;
 		this.lockType = lockType;
-		this.device = device;
+		this.mac = mac;
 		this.service = service;
 		this.size = size;
 		this.recoveryEmail = recoveryEmail;
@@ -86,7 +83,7 @@ public class SafeData implements Serializable{
 		} else {
 			try {
 				this.lockType = safeData.getLockType();
-				this.device = safeData.getDevice();
+				this.mac = safeData.getMac();
 				this.service = safeData.getService();
 				this.recoveryEmail = safeData.getRecoveryEmail();
 			} catch (IllegalAccessException e) {
@@ -117,35 +114,7 @@ public class SafeData implements Serializable{
 	 */
 	public String getMac() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
-			return device.getBluetoothAddress();
-		} else {
-			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
-		}
-	}
-	
-	/*
-	 * @return Device's friendly name
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
-	 */
-	public String getDeviceName() throws IllegalAccessException {
-		if(lockType != PWD_ONLY) {
-			try {
-				return device.getFriendlyName(false);
-			} catch (IOException e) {
-				throw new IllegalAccessException("IOExceptio caught while retrieving name: " + e);
-			}
-		} else {
-			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
-		}
-	}
-	
-	/*
-	 * @return RemoteDevice
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
-	 */
-	public RemoteDevice getDevice() throws IllegalAccessException {
-		if(lockType != PWD_ONLY) {
-			return this.device;
+			return mac;
 		} else {
 			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
 		}
@@ -155,7 +124,7 @@ public class SafeData implements Serializable{
 	 * @return UUID of service to be used
 	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
 	 */
-	private UUID getService() throws IllegalAccessException {
+	private long getService() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
 			return this.service;
 		} else {

@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
-import javax.bluetooth.UUID;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -25,7 +24,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class SafeViewer extends SelectionAdapter {
-	Safe safe, data;
+	Safe safe;
+	SafeData data;
 
 	Shell dialog, parent;
 	GridLayout dialogLayout, optionsLayout, bluetoothLayout, passwordLayout;
@@ -44,8 +44,6 @@ public class SafeViewer extends SelectionAdapter {
 
 	Scale sizeScale;
 
-	RemoteDevice device;
-
 	int[] sizeInt = { 128, 256, 512, 768, 1024, 1280, 1536, 1792, 2048 };
 	String[] sizeString = { " 0.1 GB ", " 0.25 GB ", " 0.5 GB ", " 0.75 GB ", " 1 GB ", " 1.25 GB", " 1.5 GB ",
 			" 1.75 GB ", " 2 GB " };
@@ -55,7 +53,8 @@ public class SafeViewer extends SelectionAdapter {
 	Button cancelButton;
 	Label infoLabel;
 	ProgressBar progressBar;
-	UUID service;
+	long service;
+	String mac;
 	String errorMsg = "Unknown error occured. Please try again.", passwordString;
 	Thread configureThread;
 
@@ -379,7 +378,7 @@ public class SafeViewer extends SelectionAdapter {
 			if (i != -1) {
 				try {
 					deviceLabel.setText(deviceList[i].getFriendlyName(false));
-					device = deviceList[i];
+					mac = deviceList[i].getBluetoothAddress();
 					chooseButton.setText("Change");
 					shell.dispose();
 				} catch (IOException e) {
@@ -444,7 +443,7 @@ public class SafeViewer extends SelectionAdapter {
 		public void widgetSelected(SelectionEvent arg0) {
 			deviceLabel.setText("No Device Selected");
 			chooseButton.setText("Choose");
-			device = null;
+			mac = null;
 		}
 	};
 
@@ -613,14 +612,14 @@ public class SafeViewer extends SelectionAdapter {
 
 			// Read fields and pack it in data object
 			if (bluetoothOption.getSelection()) {
-				data = new Safe(safeName.getText(), Safe.MAC_ONLY, device, null, sizeInt[sizeScale.getSelection() - 1],
+				data = new SafeData(safeName.getText(), Safe.MAC_ONLY, mac, 0, sizeInt[sizeScale.getSelection() - 1],
 						email.getText(), null);
 			} else if (passwordOption.getSelection()) {
-				data = new Safe(safeName.getText(), sizeInt[sizeScale.getSelection() - 1], hint.getText());
+				data = new SafeData(safeName.getText(), sizeInt[sizeScale.getSelection() - 1], hint.getText());
 				passwordString = password1.getText();
 			} else {
 				// Both option
-				data = new Safe(safeName.getText(), Safe.TWO_FACT, device, null, sizeInt[sizeScale.getSelection() - 1],
+				data = new SafeData(safeName.getText(), Safe.TWO_FACT, mac, 0, sizeInt[sizeScale.getSelection() - 1],
 						email.getText(), hint.getText());
 				passwordString = password1.getText();
 			}
@@ -680,6 +679,14 @@ public class SafeViewer extends SelectionAdapter {
 								+ " \nPlease enter a valid safe name.");
 				return false;
 			}
+			
+			// TODO Check for duplicate names
+			if(VolatileBag.safes.containsKey(nameString)) {
+				SOptions.showError(dialog, "Error - PROSecurity",
+						"Safe with same name already exists."
+								+ " \nPlease choose a different name.");
+				return false;
+			}
 
 			if (bluetoothOption.getSelection()) {
 				if (!validateBluetooth())
@@ -702,7 +709,7 @@ public class SafeViewer extends SelectionAdapter {
 		}
 
 		boolean validateBluetooth() {
-			if (device == null) {
+			if (mac == null) {
 				SOptions.showError(dialog, "Error - PROSecurity", "Please choose a bluetooth device.!");
 				return false;
 			}
@@ -771,7 +778,7 @@ public class SafeViewer extends SelectionAdapter {
 			String info;
 			if (data.getLockType() != Safe.PWD_ONLY) {
 				System.out.println("Configuring device...");
-				UUID[] uuid = BTOperations.getUUIDs();
+				long[] uuid = BTOperations.getUUIDs();
 				// Creating safe data + Updating in volatile bag + Creating safe + encrypting +
 				// starting threads
 				count = uuid.length + 6;
@@ -795,7 +802,7 @@ public class SafeViewer extends SelectionAdapter {
 						System.out.println(i + 1 + ": Checking for Service: " + uuid[i]);
 						int j = 0;
 						while (j < 3) {
-							if (!BTOperations.checkRange(device, uuid[i]))
+							if (!BTOperations.checkRange(mac, uuid[i]))
 								break;
 							j++;
 							System.out.println("Sleeping ...");
@@ -816,8 +823,13 @@ public class SafeViewer extends SelectionAdapter {
 					updateCancel();
 					return;
 				}
-				errorMsg = "Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
-						+ "Press try again";
+				
+				if(i==uuid.length) {
+					errorMsg = "Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
+							+ "Press try again";
+					return;
+				}
+				i = uuid.length;
 			} else {
 				count = 6;
 				i = 1;
@@ -828,10 +840,22 @@ public class SafeViewer extends SelectionAdapter {
 			System.out.println("Complete...");
 			disableCancel();
 
-			// TODO Check for duplicate names
-			// TODO Create Safe object
 			// TODO Serialize
-
+			info = "Writing to disk...";
+			updateProgress(i, info);
+			try {
+				data.serial();
+			} catch (IOException e) {
+				errorMsg = "Unable to store information to the disk. Please try again";
+				
+			}
+			// Add to list
+			VolatileBag.safes.put(data.getName(), new Safe(data));
+			
+			i++;
+			info = "Updating list...";
+			updateProgress(i, info);
+			
 			// TODO Stage 2
 
 			// TODO Stage 3
