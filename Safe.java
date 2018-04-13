@@ -1,8 +1,15 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 import javax.crypto.SecretKey;
 
 public class Safe extends SafeData {
+
 	private static final long serialVersionUID = 1L;
 
 	private boolean unlocked = false;
@@ -108,5 +115,17 @@ public class Safe extends SafeData {
 		return secretKey;
 	}
 
+	public static Safe deserial(String name) throws IOException, FileNotFoundException {
+		try {
+			File safeDat = new File(resPath + "\\" + name + safeExt);
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(safeDat));
+			SafeData dat = (SafeData) ois.readObject();
+			ois.close();
+			return new Safe(dat);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			return null;
+		}
+	}
 
 }

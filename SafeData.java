@@ -1,11 +1,20 @@
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
 
 public class SafeData implements Serializable{
 	// Final data
 	private static final long serialVersionUID = 1L;
+	
+	public static final String safeExt = ".sdat";
+	public static String rootPath = System.getenv("LocalAppData") + "\\PROSecurity";
+	public static String resPath = rootPath + "\\Res";
+	public static String tempPath = rootPath + "\\Temp";
 	
 	public static final int MAC_ONLY = 1;
 	public static final int PWD_ONLY = 2;
@@ -208,5 +217,12 @@ public class SafeData implements Serializable{
 		return name + "$"+ recoveryEmail;
 	}
 
+	public void serial() throws IOException {
+		File safeDat = new File(resPath + "\\" + this.name + safeExt);
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(safeDat));
+		oos.writeObject(this);
+		oos.flush();
+		oos.close();
+	}
 
 }
