@@ -3,8 +3,6 @@ import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.UUID;
-import javax.swing.SwingUtilities;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -15,13 +13,13 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -52,7 +50,14 @@ public class SafeViewer extends SelectionAdapter {
 	String[] sizeString = { " 0.1 GB ", " 0.25 GB ", " 0.5 GB ", " 0.75 GB ", " 1 GB ", " 1.25 GB", " 1.5 GB ",
 			" 1.75 GB ", " 2 GB " };
 
-	boolean newSafeMode, serviceFound = false, retry = true;
+	boolean newSafeMode, configured = false, cancel = false;
+	Shell messageBox;
+	Button cancelButton;
+	Label infoLabel;
+	ProgressBar progressBar;
+	UUID service;
+	String errorMsg;
+	Thread configureThread;
 
 	/*
 	 * Constructor to add new Safe
@@ -93,6 +98,7 @@ public class SafeViewer extends SelectionAdapter {
 	 * Constructor to edit safe
 	 */
 	public SafeViewer(Shell parent, Safe safe) {
+		newSafeMode = false;
 		this.parent = parent;
 		this.safe = safe;
 	}
@@ -557,73 +563,84 @@ public class SafeViewer extends SelectionAdapter {
 	 * Selection adapter for add/Update button
 	 */
 	private SelectionAdapter button3Adapter = new SelectionAdapter() {
-
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
 			if (!validateData())
 				return;
+			
+			// Display please wait frame
+			messageBox = new Shell(dialog, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
+			messageBox.setText("Creating new safe - PROSecurity");
+			GridLayout layout = new GridLayout();
+			layout.numColumns = 1;
+			layout.marginWidth = 20;
+			layout.marginHeight = 20;
+			messageBox.setLayout(layout);
 
+			new Label(messageBox, SWT.NONE).setText("Please wait...\nCreating new safe. This may take few seconds."
+					+ "\n\nMake sure that bluetooth device is turned on and is within the range.");
+			GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+			progressBar = new ProgressBar(messageBox, SWT.NONE);
+			progressBar.setLayoutData(gridData);
+
+			infoLabel = new Label(messageBox, SWT.NONE);
+			infoLabel.setText("starting ...");
+			gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+			infoLabel.setLayoutData(gridData);
+
+			gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
+			cancelButton = new Button(messageBox, SWT.PUSH);
+			cancelButton.setText(" Cancel ");
+			cancelButton.setEnabled(false);
+			cancelButton.setLayoutData(gridData);
+			cancelButton.addSelectionListener(new SelectionAdapter() {
+
+				@Override
+				public void widgetSelected(SelectionEvent arg0) {
+					cancel = true;
+					configureThread.interrupt();
+					cancelButton.setEnabled(false);
+					messageBox.setText("Cancelling... Please Wait.");
+					infoLabel.setText("Aborting operation... ");
+				}
+			});
+			
+			messageBox.pack();
+			Rectangle screenSize = parent.getDisplay().getPrimaryMonitor().getBounds();
+			messageBox.setLocation((screenSize.width - messageBox.getBounds().width) / 2,
+					(screenSize.height - messageBox.getBounds().height) / 2);
+			messageBox.open();
+
+			
 			if (newSafeMode) {
-				while (retry && !serviceFound) {
-					// Display please wait message
-					Shell messageBox = new Shell(dialog, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
-					messageBox.setText("Creating new safe - PROSecurity");
-					GridLayout layout = new GridLayout();
-					layout.numColumns = 1;
-					layout.marginWidth = 20;
-					layout.marginHeight = 20;
-					messageBox.setLayout(layout);
-
-					new Label(messageBox, SWT.NONE)
-							.setText("Please wait...\nConfiguring bluetooth device. This may take few seconds."
-									+ "\n\nMake sure that bluetooth device is turned on and is within the range.");
-					messageBox.pack();
-					Rectangle screenSize = parent.getDisplay().getPrimaryMonitor().getBounds();
-					messageBox.setLocation((screenSize.width - messageBox.getBounds().width) / 2,
-							(screenSize.height - messageBox.getBounds().height) / 2);
-					messageBox.open();
-
-					// Thread.sleep(2000);
-					UUID[] uuids = BTOperations.getUUIDs();
-					for (int i = 0; i < uuids.length; i++) {
-						System.out.println("Checking for Service: " + uuids[i]);
-						int j = 0;
-						while (j < 3) {
-							if (!BTOperations.checkRange(device, uuids[i]))
-								break;
-							j++;
-							System.out.println("Sleeping ...");
-							// Thread.sleep(200);
-						}
-						if (j == 3) {
-							serviceFound = true;
-							break;
-						}
-					}
-
-					if (serviceFound) {
-						messageBox.dispose();
-						// Create Safe object
-						// Serialize
-						SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 1 Safe creation complete");
-					} else {
-						messageBox.dispose();
-						retry = SOptions.showConfirm(dialog, "Error - PROSecurity",
-								"Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
-										+ "Press 'Ok' to try again");
+								
+				// Starting thread
+				cancel = false;
+				configured = false;
+				configureThread = new Thread(newSafeRun);
+				configureThread.start();
+				
+				// Wait for thread to finish
+				while (!messageBox.isDisposed() && configureThread.isAlive()) {
+					if (!messageBox.getDisplay().readAndDispatch()) {
+						messageBox.getDisplay().sleep();
 					}
 				}
-
-				// TODO Check for duplicate names
-
-				// TODO Stage 2
-
-				// TODO Stage 3
-
+				messageBox.dispose();
+				
+				if (configured) {
+					messageBox.dispose();
+					SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 1 Safe creation complete");
+				} else {
+					messageBox.dispose();
+					if (!cancel) {
+						SOptions.showError(dialog, "Error - PROSecurity", errorMsg);
+					}
+					return;
+				}
 			} else {
-				// TODO
+				// TODO Edit safe mode
 			}
-
 		}
 
 		boolean validateData() {
@@ -726,6 +743,138 @@ public class SafeViewer extends SelectionAdapter {
 			}
 
 			return true;
+		}
+	};
+
+	/*
+	 * Runnable that configures, validates and adds new Safe
+	 */
+	Runnable newSafeRun = new Runnable() {
+		public void run() {
+			int count, i;
+			String info;
+			if (!passwordOption.getSelection()) {
+				UUID[] uuid = BTOperations.getUUIDs();
+				// Creating safe data + Updating in volatile bag + Creating safe + encrypting +
+				// starting threads
+				count = uuid.length + 6;
+				info = "Configuring bluetooth device ...";
+				updateStart(count);
+
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Logging statements
+				}
+
+				i = 0;
+				while (!cancel && i < uuid.length) {
+					try {
+						if (i > uuid.length / 2) {
+							info = "configuring device taking longer than expected. Please wait...";
+						}
+						updateProgress(i, info);
+						System.out.println(i + 1 + ": Checking for Service: " + uuid[i]);
+						int j = 0;
+						while (j < 3) {
+							if (!BTOperations.checkRange(device, uuid[i]))
+								break;
+							j++;
+							System.out.println("Sleeping ...");
+							Thread.sleep(500);
+						}
+						if (j == 3) {
+							service = uuid[i];
+							break;
+						}
+						i++;
+					} catch (InterruptedException e) {
+						// TODO Logging statements
+					}
+				}
+
+				if (cancel) {
+					updateCancel();
+					return;
+				}
+				errorMsg = "Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
+						+ "Press try again";
+			} else {
+				count = 6;
+				i = 1;
+				updateStart(count);
+				info = "Storing information...";
+				updateProgress(i, info);
+			}
+			disableCancel();
+
+			// TODO Check for duplicate names
+			// TODO Create Safe object
+			// TODO Serialize
+
+			// TODO Stage 2
+
+			// TODO Stage 3
+
+			updateFinish();
+			return;
+		}
+
+		void disableCancel() {
+			messageBox.getDisplay().asyncExec(new Runnable() {
+				public void run() {
+					cancelButton.setEnabled(false);
+				}
+			});
+		}
+
+		void updateStart(int count) {
+			messageBox.getDisplay().asyncExec(new Runnable() {
+				public void run() {
+					cancelButton.setEnabled(true);
+					infoLabel.setText("Configuring bluetooth device ...");
+					progressBar.setMinimum(0);
+					progressBar.setMaximum(count);
+					progressBar.setSelection(0);
+				}
+			});
+		}
+
+		void updateProgress(int value, String info) {
+			messageBox.getDisplay().asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					progressBar.setSelection(value);
+					infoLabel.setText(info);
+				}
+			});
+		}
+
+		void updateFinish() {
+			messageBox.getDisplay().asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					configured = true;
+					progressBar.setMaximum(1);
+					progressBar.setSelection(1);
+					infoLabel.setText("Finished.");
+				}
+			});
+		}
+
+		void updateCancel() {
+			messageBox.getDisplay().asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						progressBar.setMaximum(1);
+						progressBar.setSelection(0);
+						infoLabel.setText("Cancelled.");
+					} catch (Exception e) {
+
+					}
+				}
+			});
 		}
 	};
 
