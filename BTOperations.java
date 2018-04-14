@@ -22,7 +22,7 @@ public class BTOperations {
     public final static long PAN_USER = 0x1115;
     public final static long NETWORK_ACCESS_POINT = 0x1116;
     public final static long GROUP_NETWORK = 0x1117;
-    public final String loggerName = "default.runtime";
+    public final static String loggerName = "default.runtime";
 	
 	static boolean dontShow = false;
 	static int responseCode;
@@ -32,7 +32,7 @@ public class BTOperations {
 	/*
 	 *  Initializes logger
 	 */
-	public void init() {
+	public static void init() {
 		logger = Logger.getLogger(loggerName);
 		logger.info("BTOperations Initialized");
 	}

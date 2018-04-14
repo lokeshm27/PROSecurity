@@ -19,7 +19,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.eclipse.swt.widgets.Shell;
 
 public class CryptOperations {
-	public final String loggerName = "default.runtime";
+	public final static String loggerName = "default.runtime";
 	
 	static int bufferSize = 512*1024; //2Mb buffer
 	static Logger logger;
@@ -27,7 +27,7 @@ public class CryptOperations {
 	/*
 	 * Initializes logger
 	 */
-	public void init() {
+	public static void init() {
 		logger = Logger.getLogger(loggerName);
 		logger.info("CryptOperations Initialized");
 	}
