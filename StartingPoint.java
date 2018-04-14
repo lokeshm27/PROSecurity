@@ -194,7 +194,7 @@ public class StartingPoint {
 		serverThread.start();
 		VolatileBag.serverThread = serverThread;
 		//TODO Start Other threads
-		
+		// TODO Init classes
 		//TODO Process current arguments
 		String msg = getFormattedArgs(args);
 		if(msg != null) {

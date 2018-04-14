@@ -1,5 +1,5 @@
+import java.io.IOException;
 import java.util.logging.Logger;
-
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
@@ -8,7 +8,6 @@ import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
-
 import org.eclipse.swt.widgets.Shell;
 
 public class BTOperations {
@@ -35,7 +34,7 @@ public class BTOperations {
 	 */
 	public void init() {
 		logger = Logger.getLogger(loggerName);
-		logger.info("CryptOperations Initialized");
+		logger.info("BTOperations Initialized");
 	}
 	
 	/*
@@ -111,11 +110,11 @@ public class BTOperations {
 	 * @return true: If found in the range else false
 	 */
 	public static boolean checkRange(RemoteDevice device, UUID service) {
-		
 		if (!isPowerOn(false)) {
 			return false;
 		} else {
 			try {
+				logger.info("Checking range of the bluetooth device: " + device.getFriendlyName(false) + " MAC: " + device.getBluetoothAddress());
 				int[] attributes = new int[] { 0x0100, 0x0000 };
 				Object syncObject = new Object();
 				
@@ -150,16 +149,17 @@ public class BTOperations {
 
 				synchronized (syncObject) {
 					syncObject.wait();
+					logger.info("Service check complete of device " + device.getFriendlyName(false) + ": " + responseCode);
 					if(responseCode == 1)
 						return true;
 					return false;
 				}
 			} catch (BluetoothStateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warning("Bluetooth Stack exception occured: " + e.getMessage());
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warning("Thread was interrupted while serching for service: " + e.getMessage());
+			} catch (IOException e) {
+				logger.warning("IOException occured: " + e.getMessage());
 			}
 			return false;
 		}

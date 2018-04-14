@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
@@ -26,7 +27,9 @@ import org.eclipse.swt.widgets.Text;
 public class SafeViewer extends SelectionAdapter {
 	Safe safe;
 	SafeData data;
-
+	
+	public final String loggerName = "default.runtime";
+	
 	Shell dialog, parent;
 	GridLayout dialogLayout, optionsLayout, bluetoothLayout, passwordLayout;
 	GridData gridData;
@@ -57,11 +60,14 @@ public class SafeViewer extends SelectionAdapter {
 	String mac;
 	String errorMsg = "Unknown error occured. Please try again.", passwordString;
 	Thread configureThread;
+	Logger logger;
 
 	/*
 	 * Constructor to add new Safe
 	 */
 	public SafeViewer(Shell parent) {
+		logger = Logger.getLogger(loggerName);
+		logger.info("SafeViewer initialized in add new safe mode");
 		newSafeMode = true;
 		this.parent = parent;
 		init();
@@ -97,6 +103,8 @@ public class SafeViewer extends SelectionAdapter {
 	 * Constructor to edit safe
 	 */
 	public SafeViewer(Shell parent, Safe safe) {
+		logger = Logger.getLogger(loggerName);
+		logger.info("SafeViewer initialized in view safe mode");
 		newSafeMode = false;
 		this.parent = parent;
 		this.safe = safe;
@@ -106,6 +114,7 @@ public class SafeViewer extends SelectionAdapter {
 	 * Initializes the basic frame contents
 	 */
 	private void init() {
+		logger.info("Initializing safe viewwer frame");
 		dialog = new Shell(parent, SWT.DIALOG_TRIM | SWT.PRIMARY_MODAL);
 		dialog.setSize(500, 410);
 
@@ -297,7 +306,7 @@ public class SafeViewer extends SelectionAdapter {
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
 			busy = true;
-
+			
 			shell = new Shell(dialog, SWT.DIALOG_TRIM | SWT.PRIMARY_MODAL);
 			shell.setText("Choose a Device - PROSecurity");
 			GridLayout layout = new GridLayout();
@@ -305,7 +314,7 @@ public class SafeViewer extends SelectionAdapter {
 			layout.marginHeight = 20;
 			layout.marginWidth = 20;
 			shell.setLayout(layout);
-
+			logger.info("Loading list of bluetooth devices");
 			link1 = new Link(shell, SWT.NONE);
 			link1.setText("<a>Loading list...</a>");
 			link1.addSelectionListener(new SelectionAdapter() {
@@ -382,8 +391,7 @@ public class SafeViewer extends SelectionAdapter {
 					chooseButton.setText("Change");
 					shell.dispose();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.warning("Unable to fetch name of the device as IOException occured: " + e.getMessage());
 				}
 			} else {
 				SOptions.showError(shell, "Error - PROSecurity", "Please select an option.!");
@@ -418,11 +426,9 @@ public class SafeViewer extends SelectionAdapter {
 					}
 				}
 			} catch (BluetoothStateException e) {
-				// TODO
-				e.printStackTrace();
+				logger.warning("Bluetooth Stack Exception occured while loading list: " + e.getMessage());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.warning("IOException occured while loading list: " + e.getMessage());
 			} finally {
 				busy = false;
 				if (!firstTime)
@@ -564,9 +570,10 @@ public class SafeViewer extends SelectionAdapter {
 	private SelectionAdapter button3Adapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
+			logger.info("Add new button clicked. Validating data");
 			if (!validateData())
 				return;
-
+			logger.info("Validating data complete. Starting process");
 			// Display please wait frame
 			messageBox = new Shell(dialog, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
 			messageBox.setText("Creating new safe - PROSecurity");
@@ -596,6 +603,7 @@ public class SafeViewer extends SelectionAdapter {
 
 				@Override
 				public void widgetSelected(SelectionEvent arg0) {
+					logger.info("Process was cancelled");
 					cancel = true;
 					configureThread.interrupt();
 					cancelButton.setEnabled(false);
@@ -773,11 +781,11 @@ public class SafeViewer extends SelectionAdapter {
 	 */
 	Runnable newSafeRun = new Runnable() {
 		public void run() {
-			System.out.println("Starting thread...");
+			logger.info("Starting newSafe thread...");
 			int count, i;
 			String info;
 			if (data.getLockType() != Safe.PWD_ONLY) {
-				System.out.println("Configuring device...");
+				logger.info("Configuring bluetooth device: " + mac);
 				long[] uuid = BTOperations.getUUIDs();
 				// Creating safe data + Updating in volatile bag + Creating safe + encrypting +
 				// starting threads
@@ -788,8 +796,7 @@ public class SafeViewer extends SelectionAdapter {
 				try {
 					Thread.sleep(2000);
 				} catch (InterruptedException e) {
-					// TODO Logging statements
-					e.printStackTrace();
+					logger.warning("newSafe thread was interrupted on sleep time 1");
 				}
 
 				i = 0;
@@ -799,13 +806,13 @@ public class SafeViewer extends SelectionAdapter {
 							info = "configuring device taking longer than expected. Please wait...";
 						}
 						updateProgress(i, info);
-						System.out.println(i + 1 + ": Checking for Service: " + uuid[i]);
+						logger.info(i + 1 + ": Checking for Service: " + uuid[i]);
 						int j = 0;
 						while (j < 3) {
 							if (!BTOperations.checkRange(mac, uuid[i]))
 								break;
 							j++;
-							System.out.println("Sleeping ...");
+							logger.info("Success time " + j+1 + " Sleep time 2");
 							Thread.sleep(500);
 						}
 						if (j == 3) {
@@ -814,8 +821,7 @@ public class SafeViewer extends SelectionAdapter {
 						}
 						i++;
 					} catch (InterruptedException e) {
-						// TODO Logging statements
-						e.printStackTrace();
+						logger.warning("newSafe thread was interrupted using sleep time 2");
 					}
 				}
 
@@ -827,9 +833,11 @@ public class SafeViewer extends SelectionAdapter {
 				if(i==uuid.length) {
 					errorMsg = "Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
 							+ "Press try again";
+					logger.info("Configurationg failed. Didn't respond for any services.");
 					return;
 				}
 				i = uuid.length;
+				logger.fine("Configuration success");
 			} else {
 				count = 6;
 				i = 1;
@@ -837,19 +845,21 @@ public class SafeViewer extends SelectionAdapter {
 				info = "Storing information...";
 				updateProgress(i, info);
 			}
-			System.out.println("Complete...");
 			disableCancel();
 
-			// TODO Serialize
+			// Serializing object
 			info = "Writing to disk...";
 			updateProgress(i, info);
 			try {
+				logger.info("Serializing SafeData object");
 				data.serial();
 			} catch (IOException e) {
+				logger.severe("IOException occured while serializing: " + e.getMessage());
 				errorMsg = "Unable to store information to the disk. Please try again";
-				
 			}
+			
 			// Add to list
+			logger.info("Updating list in VolatileBag");
 			VolatileBag.safes.put(data.getName(), new Safe(data));
 			
 			i++;
@@ -859,12 +869,13 @@ public class SafeViewer extends SelectionAdapter {
 			// TODO Stage 2
 
 			// TODO Stage 3
-
+			
+			logger.finest("Finishing process. Sleep time 3");
 			updateFinish();
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				// TODO
+				logger.warning("newSafe thread was interrupted during sleep time 3: " + e.getMessage());
 			}
 			return;
 		}
@@ -887,7 +898,7 @@ public class SafeViewer extends SelectionAdapter {
 						progressBar.setMaximum(count);
 						progressBar.setSelection(0);
 					} catch (Exception e) {
-
+						// Do nothing, Caused by widget disposed
 					}
 				}
 			});
@@ -901,7 +912,7 @@ public class SafeViewer extends SelectionAdapter {
 						progressBar.setSelection(value);
 						infoLabel.setText(info);
 					} catch (Exception e) {
-
+						// Do nothing, Caused by widget disposed
 					}
 				}
 			});
@@ -917,7 +928,7 @@ public class SafeViewer extends SelectionAdapter {
 						progressBar.setSelection(1);
 						infoLabel.setText("Finished.");
 					} catch (Exception e) {
-
+						// Do nothing, Caused by widget disposed
 					}
 				}
 			});
@@ -932,7 +943,7 @@ public class SafeViewer extends SelectionAdapter {
 						progressBar.setSelection(0);
 						infoLabel.setText("Cancelled.");
 					} catch (Exception e) {
-
+						// Do nothing, Caused by widget disposed
 					}
 				}
 			});

@@ -67,20 +67,15 @@ public class KeyStorage {
 				ks.store(new FileOutputStream(keyStoreFile), fileKeyString.toCharArray());
 			}
 		} catch (KeyStoreException e) {
-			// TODO Add logging statements
-			e.printStackTrace();
+			logger.severe("KeyStorage Exception caugt: " + e.getMessage());
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("NoSuchAlgorithException caught: " + e.getMessage());
 		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("CertificateException caught: " + e.getMessage());
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("FileNotFoundException caught: " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Add logging statements
-			System.out.println("IOException Occured.!");
+			logger.warning("IOException caught: " + e.getMessage());
 			throw e;
 		}
 		return ks;
@@ -107,23 +102,19 @@ public class KeyStorage {
 			keyStore.setEntry(entryName, entry, param);
 			keyStore.store(fos, fileKeyString.toCharArray());
 		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("KeyStorage Exception caugt: " + e.getMessage());
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("NoSuchAlgorithException caught: " + e.getMessage());
 		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("CertificateException caught: " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("IOException caught: " + e.getMessage());
 		} finally {
 			if (fos != null) {
 				try {
 					fos.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Do nothing
 				}
 			}
 		}
@@ -148,23 +139,19 @@ public class KeyStorage {
 		try {
 			entry = (SecretKeyEntry) keyStore.getEntry(entryName, param);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Add logging statements
-			e.printStackTrace();
+			logger.severe("NoSuchAlgorithmException caught: " + e.getMessage());
 		} catch (UnrecoverableEntryException e) {
-			// TODO Add logging statements
-			System.out.println("UnrecoverableEntryException caught : " + e);
+			logger.warning("UnrecoverableEntryException caught : " + e);
 			throw e;
 		} catch (KeyStoreException e) {
-			// TODO Add logging statements
-			e.printStackTrace();
+			logger.severe("KeyStoreExceptionCaught: " + e.getMessage());
 		} finally {
 			if(fis!=null) {
 				try {
 					// Close File
 					fis.close();
 				} catch (IOException e) {
-					// TODO Add logging Statements
-					e.printStackTrace();
+					// Do nothing
 				}
 			}
 		}
@@ -177,18 +164,26 @@ public class KeyStorage {
 	/* Deletes the Entry with the specified Name 
 	 * @param entryName: Alias/Name of the entry
 	 * @throws IOException: if given password is incorrect
-	 * @throws IllegalArgumentException: if entry with the given name doesn't exists
+	 * @throws IllegalArgumentException: if given key String is incorrect
+	 * @throws NullPointerException: if entry with the given name doesn't exists
 	 */
-	public void deleteEntry(String entryName) throws IOException, IllegalArgumentException {
+	public void deleteEntry(String entryName, String entryKeyString) throws IOException, IllegalArgumentException {
 		KeyStore keyStore = getKeyStore();
 		try {
 			if(!keyStore.containsAlias(entryName)) {
-				throw new IllegalArgumentException("Entry not found " + entryName);
+				throw new NullPointerException("Entry not found " + entryName);
+			}
+			
+			try {
+				getKey(entryName, entryKeyString);
+			} catch (UnrecoverableEntryException e) {
+				throw new IllegalArgumentException("Invalid key for entry: " + entryName);
+			} catch(NullPointerException e) {
+				// Do nothing, Will never encounter
 			}
 			keyStore.deleteEntry(entryName);
 		} catch (KeyStoreException e) {
-			// TODO Add logging statements
-			e.printStackTrace();
+			logger.severe("KeyStoreException caught: " + e.getMessage());
 		}
 	}
 	
