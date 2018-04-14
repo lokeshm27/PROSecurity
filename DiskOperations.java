@@ -23,7 +23,7 @@ public class DiskOperations {
 	 */
 	public static void init() {
 		logger = Logger.getLogger(loggerName);
-		logger.info("BTOperations Initialized");
+		logger.info("DiskOperations Initialized");
 	}
 	
 	/*
@@ -32,11 +32,16 @@ public class DiskOperations {
 	public static void createDisk(SafeData safe) {
 		try {
 			String scriptName = "createScript" + safe.getName() + ".txt";
+			
+			logger.info("Creating VHD for safe: " + safe.getName());
 			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
 			pw.write(getCreateCommands(safe.getSafeFileName(), safe.getSize(), safe.getName(), getFreeLetter()));
 			pw.close();
 			
 			runScript(scriptName);
+			
+			//Delete File
+			new File(scriptName).delete();
 			
 			File sourceFile = new File(tempPath + "\\" + safe.getSafeFileName() + ".vhd");
 			File destFile = new File(resPath + "\\" + safe.getSafeFileName() + ".prhd");
@@ -44,11 +49,9 @@ public class DiskOperations {
 			
 			attachDisk(safe.getSafeFileName() + ".vhd");
 		} catch (FileNotFoundException e) {
-			// TODO
-			e.printStackTrace();
+			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("IOException caught while copying VHD File: " + e.getMessage());
 		}
 	}
 	
@@ -59,15 +62,19 @@ public class DiskOperations {
 	public static void attachDisk(String safeName) {
 		try {
 			String scriptName = "attachScript" + safeName + ".txt";
+			logger.info("attaching disk: " + safeName);
+			
 			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
 			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\n"
 					+ "attach vdisk");
 			pw.close();
 			
 			runScript(safeName);
+			
+			//Delete File
+			new File(scriptName).delete();
 		} catch (FileNotFoundException e) {
-			// TODO
-			e.printStackTrace();
+			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
 		}
 	}
 	
@@ -78,15 +85,19 @@ public class DiskOperations {
 	public static void dettachDisk(String safeName) {
 		try {
 			String scriptName = "detachScript" + safeName + ".txt";
+			logger.info("detaching disk: " + safeName);
+			
 			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
 			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\n"
 					+ "detach vdisk");
 			pw.close();
 			
 			runScript(safeName);
+			
+			// Delete File
+			new File(scriptName).delete();
 		} catch (FileNotFoundException e) {
-			// TODO
-			e.printStackTrace();
+			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
 		}
 	}
 	
@@ -108,11 +119,9 @@ public class DiskOperations {
 			//Sleep for 15 secs recommended
 			Thread.sleep(15000);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("IOException caught while running command: " + e.getMessage());
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("Interrupted while finishing execution: " + e.getMessage());
 		}
 	}
 	
@@ -133,12 +142,14 @@ public class DiskOperations {
 			// Run the script
 			runScript(scriptName);
 			
+			//Delete File
+			new File(scriptName).delete();
+			
 			char biggestLetter = 'C';
 			boolean ready = false;
 			FileReader reader = new FileReader(tempPath + "\\log.txt");
 			BufferedReader ip = new BufferedReader(reader);
 			String line;
-			;
 			while ((line = ip.readLine()) != null) {
 				if (!line.isEmpty()) {
 					if (!ready) {
@@ -166,7 +177,7 @@ public class DiskOperations {
 			}
 			return 'p';
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.severe(e + "Exception caught while checking free drive letter: " + e.getMessage());
 		}
 		return 'p';
 	}
@@ -194,7 +205,7 @@ public class DiskOperations {
 	 */
 	public static void hideFile(String fileName) throws FileNotFoundException {
 		String filePath = resPath + "\\" + fileName;
-		
+		logger.info("Hiding file: " + fileName);
 		if(!(new File(filePath).exists())) {
 			throw new FileNotFoundException("File not found: " + fileName);
 		}
@@ -207,4 +218,6 @@ public class DiskOperations {
 			e.printStackTrace();
 		}
 	}
+	
+	
 }
