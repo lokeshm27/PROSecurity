@@ -1,9 +1,3 @@
-import java.awt.AWTException;
-import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
-import java.awt.SystemTray;
-import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +11,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Calendar;
@@ -29,7 +22,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
 import org.eclipse.swt.widgets.Shell;
 
 public class StartingPoint {
@@ -45,14 +37,12 @@ public class StartingPoint {
 	static FileChannel channel = null;
 	
 	
-	/*
+	/**
 	 * Starts application in either Server mode or Client mode
-	 * 		Performs File Locking and Port Checking
+	 *		Performs File Locking and Port Checking
 	 */
 	@SuppressWarnings("resource")
-
 	public static void main(String args[]) {
-
 		// Check if One-time initialization is required
 		if (!new File(rootPath).exists()) {
 			init();
@@ -98,7 +88,7 @@ public class StartingPoint {
 	}
 
 	
-	/*
+	/**
 	 * Creates folders required for operation: rootFolder, resFolder and tempFolder
 	 */
 	public static void init() {
@@ -153,14 +143,13 @@ public class StartingPoint {
 	}
 
 	
-	/*
+	/**
 	 * Starts the operation in ServerMode
 	 * 		Creates and runs all necessary threads and operations
-	 * @param args[] String Array that contains the run time arguments
+	 * @param args String Array that contains the run time arguments
 	 */
 	public static void serverMode(String args[]) {
 		File loginDatFile = new File(resPath + "\\login.dat");
-		boolean loginConfigured = true;
 
 		System.out.println("Server Mode");
 
@@ -194,7 +183,13 @@ public class StartingPoint {
 		serverThread.start();
 		VolatileBag.serverThread = serverThread;
 		//TODO Start Other threads
-		// TODO Init classes
+		
+		//Initialize Operations class
+		BTOperations.init();
+		CryptOperations.init();
+		DiskOperations.init();
+		TrayOperations.init();
+		
 		//TODO Process current arguments
 		String msg = getFormattedArgs(args);
 		if(msg != null) {
@@ -202,59 +197,14 @@ public class StartingPoint {
 		}
 		
 		if(!loginDatFile.exists()) {
-			logger.info("Auto Lock not configured");
-			loginConfigured = false;
-			VolatileBag.status = false;
-		}
-
-		// initialize tray Icon
-		if (SystemTray.isSupported()) {
-			try {
-				// initialize Pop-up menu
-				PopupMenu menu = new PopupMenu();
-
-				MenuItem safeItem = new MenuItem("Safes");
-				MenuItem loginItem = new MenuItem("Auto Lock");
-				MenuItem settingsItem = new MenuItem("Settings");
-				MenuItem aboutItem = new MenuItem("About PROSecurity");
-				MenuItem exitItem = new MenuItem("Exit");
-
-				// TODO Add action listener to MenuItems
-				
-				safeItem.addActionListener(new SafeActionListener());
-				exitItem.addActionListener(new ExitActionListener());
-				
-				menu.add(safeItem);
-				menu.add(loginItem);
-				menu.addSeparator();
-				menu.add(settingsItem);
-				menu.add(aboutItem);
-				menu.addSeparator();
-				menu.add(exitItem);
-
-				// Initialize Tray Image
-				URL url = null;
-				if (!loginConfigured) {
-					// TODO Show message
-					url = System.class.getResource("/images/yellow-Shield.png");
-				} else {
-					url = System.class.getResource("/images/green-Shield.png");
-				}
-				
-				Image img = Toolkit.getDefaultToolkit().getImage(url);
-
-				TrayIcon trayIcon = new TrayIcon(img, "PRO Security", menu);
-				// TODO Add ActionListener to TrayIcon
-				
-				SystemTray.getSystemTray().add(trayIcon);
-				logger.fine("Tray Icon has been initialized");
-			} catch (AWTException e) {
-				logger.severe("AWT Exception caught: " + e.getMessage());
-			}
+			TrayOperations.toYellow("Smart Lock not configured");
+			TrayOperations.displayMessage("PROSecurity - Started", "PRO Security has started operating but Smart Lock not configured."
+			+" Please visit Smart Lock page to configure now. ", TrayIcon.MessageType.WARNING);
 		} else {
-			logger.warning("System does not support tray Icon");
-			SOptions.showError(new Shell(), "PROSecurity - Error", "Your system does not support tray icon. PROSecurity will continue to work without it.");
+			TrayOperations.toGreen("Smart Lock not configured");
+			TrayOperations.displayMessage("PROSecurity - Started", "PROSecurity has started operating in normal mode.", TrayIcon.MessageType.INFO);
 		}
+		
 		try {
 			serverThread.join();
 			// TODO Wait for other threads
@@ -264,10 +214,10 @@ public class StartingPoint {
 	}
 
 	
-	/*
+	/**
 	 * Starts operation in client mode
 	 * 		Sends message to the servers and exists
-	 *@param args[]: String Array that contains the run time arguments
+	 * @param args String Array that contains the run time arguments
 	 */
 	public static void clientMode(String args[]) {
 		try {
@@ -284,7 +234,7 @@ public class StartingPoint {
 			//TODO Transform arguments
 			String msg = "PROSecurity|Test Message";
 			
-			//Send message to server
+			// Send message to server
 			Socket socket = new Socket("localhost", port);
 			socket.setSoTimeout(5000);
 			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -328,7 +278,7 @@ public class StartingPoint {
 	}
 	
 	
-	/* TODO
+	/** TODO
 	 * Formats the arguments
 	 * @param args[]: Array of String containing arguments
 	 * @return String formatted from the given array of String

@@ -8,7 +8,11 @@ import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
+
+import javax.swing.filechooser.FileSystemView;
 
 public class DiskOperations {
 	
@@ -41,9 +45,6 @@ public class DiskOperations {
 			
 			runScript(scriptName);
 			
-			//Delete File
-			new File(scriptName).delete();
-			
 			File sourceFile = new File(tempPath + "\\" + safe.getSafeFileName() + ".vhd");
 			File destFile = new File(resPath + "\\" + safe.getSafeFileName() + ".prhd");
 			Files.copy(sourceFile.toPath(), destFile.toPath());
@@ -66,14 +67,11 @@ public class DiskOperations {
 			logger.info("attaching disk: " + safeName);
 			
 			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\n"
+			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
 					+ "attach vdisk");
 			pw.close();
 			
-			runScript(safeName);
-			
-			//Delete File
-			new File(scriptName).delete();
+			runScript(scriptName);
 		} catch (FileNotFoundException e) {
 			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
 		}
@@ -89,14 +87,11 @@ public class DiskOperations {
 			logger.info("detaching disk: " + safeName);
 			
 			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\n"
+			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
 					+ "detach vdisk");
 			pw.close();
 			
-			runScript(safeName);
-			
-			// Delete File
-			new File(scriptName).delete();
+			runScript(scriptName);
 		} catch (FileNotFoundException e) {
 			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
 		}
@@ -114,12 +109,25 @@ public class DiskOperations {
 			pb.directory(parentDir);
 			pb.redirectErrorStream(true);
 			pb.redirectOutput(Redirect.appendTo(diskLog));
-			pb.command("cmd", "/c", "Start", "/B", "diskpart", "/s", "script.txt");
+			pb.command("cmd", "/c", "start", "/b", "diskpart", "/s", tempPath + "\\" + fileName);
 			Process p = pb.start();
 			p.waitFor();
 			
-			//Sleep for 15 secs recommended
+			//Sleep for 15 secs before returning recommended
 			Thread.sleep(15000);
+			// wait for 15 
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Thread.sleep(15000);
+					} catch (InterruptedException e) {
+						logger.warning("Thread waiting to delete diskpart script thread interrupted: " + e.getMessage());
+					}
+					new File(tempPath + "\\" + fileName).delete(); 
+				}
+				
+			}).start();
 		} catch (IOException e) {
 			logger.severe("IOException caught while running command: " + e.getMessage());
 		} catch (InterruptedException e) {
@@ -150,7 +158,7 @@ public class DiskOperations {
 			
 			char biggestLetter = 'C';
 			boolean ready = false;
-			FileReader reader = new FileReader(tempPath + "\\log.txt");
+			FileReader reader = new FileReader(tempPath + "\\diskpart.log");
 			BufferedReader ip = new BufferedReader(reader);
 			String line;
 			while ((line = ip.readLine()) != null) {
@@ -226,5 +234,42 @@ public class DiskOperations {
 		}
 	}
 	
+	/**
+	 * Opens the folder in which disk has been mounted given by Safe Label
+	 * @param safeLabel String containing label of the Safe to be opened
+	 */
+	public static void openDisk(String safeLabel) {
+		logger.info("Opening safe folder: " + safeLabel);
+		List <File>files = Arrays.asList(File.listRoots());
+		for (File f : files) {
+	        String discription = FileSystemView.getFileSystemView().getSystemDisplayName(f);
+	        if(!discription.isEmpty()) {
+	        	String label = discription.substring(0, discription.length() - 5);
+	        	if(label.equals(safeLabel)) {
+	        		try {
+						Runtime.getRuntime().exec("explorer.exe " + f.getAbsolutePath());
+						return;
+					} catch (IOException e) {
+						logger.severe("IOException occured while opening drive folder: " + e.getMessage());
+					}
+	        	}
+	        }
+	    }
+	}
+	
+	/**
+	 * Deletes the specified safe vhd file
+	 * @param safeName String containing the name of the safe in .vhd file
+	 */
+	public static void deleteSafe(String safeName) {
+		// TODO
+	}
+	
+	/**
+	 * Deletes all .vhd files in temp folder. Use it in code Red situations
+	 */
+	public static void deleteAll() {
+		// TODO
+	}
 	
 }

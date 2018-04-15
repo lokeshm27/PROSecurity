@@ -859,15 +859,19 @@ public class SafeViewer extends SelectionAdapter {
 			}
 			
 			// Add to list
-			logger.info("Updating list in VolatileBag");
-			VolatileBag.safes.put(data.getName(), new Safe(data));
-			
 			i++;
 			info = "Updating list...";
 			updateProgress(i, info);
+			logger.info("Updating list in VolatileBag");
+			VolatileBag.safes.put(data.getName(), new Safe(data));
+			
 			
 			// TODO Stage 2
-
+			i++;
+			info="Creating safe...";
+			updateProgress(i, info);
+			DiskOperations.createDisk(data);
+			
 			// TODO Stage 3
 			
 			logger.finest("Finishing process. Sleep time 3");
