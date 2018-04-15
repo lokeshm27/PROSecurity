@@ -650,8 +650,9 @@ public class SafeViewer extends SelectionAdapter {
 
 				if (configured) {
 					// messageBox.dispose();
-					SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 1 Safe creation complete");
+					SOptions.showInformation(dialog, "Success - PROSecurity", "Stage 2 Safe creation complete.\nClick 'OK' to open Safe and start using it.");
 					dialog.dispose();
+					DiskOperations.openDisk(data.getName());
 					return;
 				} else {
 					// messageBox.dispose();
