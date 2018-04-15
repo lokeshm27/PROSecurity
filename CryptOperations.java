@@ -24,7 +24,7 @@ public class CryptOperations {
 	static int bufferSize = 512*1024; //2Mb buffer
 	static Logger logger;
 	
-	/*
+	/**
 	 * Initializes logger
 	 */
 	public static void init() {
@@ -33,7 +33,7 @@ public class CryptOperations {
 	}
 	
 	
-	/* Generates random bytes that is used as Initialization Vector for 
+	/** Generates random bytes that is used as Initialization Vector for 
 	 * encryption algorithm using SecureRandom class
 	 * @return byte[] of generated IV
 	 */
@@ -52,12 +52,13 @@ public class CryptOperations {
 	}
 	
 	
-	/* Encrypts or Decrypts File using AES-128 algorithm
+	/** Encrypts or Decrypts File using AES-128 algorithm
 	 * 
 	 * @param mode Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE
-	 * @param secretKey encryption key to be used
+	 * @param secretKey Encryption key to be used
 	 * @param inputFile String containing path of input file
 	 * @param outputFile String containing path of output file
+	 * @param ivNums Byte[] array containing Initialization vectors (IV)
 	 */
 	public static void doOperation(int mode, SecretKey secretKey, String inputFile, String outputFile, byte[] ivNums) {
 		try {
@@ -109,18 +110,18 @@ public class CryptOperations {
 	}
 
 	
-	/* Converts byte[] to SecretKey object used for storing IV in the KeyStore
+	/** Converts byte[] to SecretKey object used for storing IV in the KeyStore
 	 * 
-	 * @param byte[] containing the IV
+	 * @param ivNum byte[] containing the IV
 	 * @return SecretKey object obtained from specified IV
 	 */
 	public static SecretKey toSecretKey(byte[] ivNum) {
 		return new SecretKeySpec(ivNum, 0, ivNum.length, "AES");
 	}
 	
-	/* Converts SecretKey object to byte[] used for retrieving IV from KeyStore
+	/** Converts SecretKey object to byte[] used for retrieving IV from KeyStore
 	 * 
-	 * @param SecretKey object to be converted
+	 * @param key SecretKey object to be converted
 	 * @return byte[] converted from specified SecretKey
 	 */
 	public static byte[] toByte(SecretKey key) {

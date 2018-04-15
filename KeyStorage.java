@@ -33,7 +33,10 @@ public class KeyStorage {
 	private File keyStoreFile = null;
 	private String fileKeyString = null;
 
-	// Constructor with fileKey only
+	/**
+	 *  Constructor with fileKey only. Uses default key store file location: Res
+	 * @param fileKeyString String containign file key password
+	 */
 	public KeyStorage(String fileKeyString) {
 		this.fileKeyString = fileKeyString;
 		this.keyStoreFile = new File(System.getenv("LocalAppData") + "\\PROSecurity\\Res\\DataStore.keystore");
@@ -41,7 +44,11 @@ public class KeyStorage {
 		logger.info("KeyStorage initialized with FileKey Only");
 	}
 
-	//Constructor with File path and FileKey
+	/**
+	 * Constructor with File path and FileKey
+	 * @param fileKeyString String containing file key password
+	 * @param keyStorePath String containing path of the key store file
+	 */
 	public KeyStorage(String fileKeyString, String keyStorePath) {
 		this.fileKeyString = fileKeyString;
 		this.keyStoreFile = new File(keyStorePath);
@@ -49,11 +56,11 @@ public class KeyStorage {
 		logger.info("KeyStorage initialized with FileKey and keyStorePath");
 	}
 
-	/* 
-	 * Initializes and Returns the KeyStore Object
-	 * If KeyStore file doesn't exits creates the new file
-	 * 
-	 * @throws IOException: if File Key is incorrect or File has been tampered
+	/** 
+	 * Initializes and Returns the KeyStore Object.
+	 * If KeyStore file doesn't exits, creates the new file
+	 * @return KeyStore object referencing the key store file
+	 * @throws IOException if File Key is incorrect or File has been tampered
 	 */
 	private KeyStore getKeyStore() throws IOException{
 		KeyStore ks = null;
@@ -81,11 +88,11 @@ public class KeyStorage {
 		return ks;
 	}
 
-	/* Store the SecretKey in the KeyStore file
-	 * @param entryName: Alias/Name of the entry
-	 * @param secretKey: SecretKey object to be stored
-	 * @param entryKeyString: Entry Protection password
-	 * @throws IOException: if FileKey is incorrect or file has been tempered
+	/** Store the SecretKey in the KeyStore file
+	 * @param entryName String containing Alias/Name of the entry
+	 * @param secretKey SecretKey object to be stored
+	 * @param entryKeyString String containing Entry Protection password
+	 * @throws IOException If FileKey is incorrect or file has been tempered
 	 */
 	public void storeKey(String entryName, SecretKey secretKey, String entryKeyString) throws IOException{
 		// Obtain KeyStore
@@ -120,13 +127,14 @@ public class KeyStorage {
 		}
 	}
 
-	/* Retrieves the SecretKey with Specified entry name and entry password 
-	 * @param entryName: Alias/Name of the entry
-	 * @param entryKeyString: Entry Protection password
-	 * @return Secret Key object if entry is found and given password is correct
-	 * @throws UnrecoverableEntryException: if given password is incorrect
-	 * @throws NullPointerException: if no entry is found with the given name
-	 * @throws IOException: if FileKey is incorrect or file has been tempered
+	/**
+	 *  Retrieves the SecretKey with Specified entry name and entry password 
+	 * @param entryName String containing Alias/Name of the entry
+	 * @param entryKeyString String containing Entry Protection password
+	 * @return SecretKey object if entry is found and given password is correct
+	 * @throws UnrecoverableEntryException If given password is incorrect
+	 * @throws NullPointerException If no entry is found with the given name
+	 * @throws IOException If FileKey is incorrect or file has been tempered
 	 */
 	public SecretKey getKey(String entryName, String entryKeyString) throws UnrecoverableEntryException, NullPointerException, IOException {
 		// Get KeyStore
@@ -161,13 +169,14 @@ public class KeyStorage {
 		return entry.getSecretKey();
 	}
 
-	/* Deletes the Entry with the specified Name 
-	 * @param entryName: Alias/Name of the entry
-	 * @throws IOException: if given password is incorrect
-	 * @throws IllegalArgumentException: if given key String is incorrect
-	 * @throws NullPointerException: if entry with the given name doesn't exists
+	/** Deletes the Entry with the specified Name 
+	 * @param entryName String containing Alias/Name of the entry
+	 * @param entryKeyString String containing entry key/password
+	 * @throws UnrecoverableEntryException If given key String is incorrect 
+	 * @throws NullPointerException If entry with the given name doesn't exists
+	 * @throws IOException If KeyStore file key is incorrect or file has been tampered
 	 */
-	public void deleteEntry(String entryName, String entryKeyString) throws IOException, IllegalArgumentException {
+	public void deleteEntry(String entryName, String entryKeyString) throws NullPointerException, UnrecoverableEntryException, IOException {
 		KeyStore keyStore = getKeyStore();
 		try {
 			if(!keyStore.containsAlias(entryName)) {
@@ -177,7 +186,7 @@ public class KeyStorage {
 			try {
 				getKey(entryName, entryKeyString);
 			} catch (UnrecoverableEntryException e) {
-				throw new IllegalArgumentException("Invalid key for entry: " + entryName);
+				throw e;
 			} catch(NullPointerException e) {
 				// Do nothing, Will never encounter
 			}
@@ -187,11 +196,15 @@ public class KeyStorage {
 		}
 	}
 	
-	/* Returns the Secret Key in string format
-	 * Obtains the SecretKey object using getKey() function and Converts it to String
-	 * 
+	/** Returns the Secret Key in string format.
+	 * Obtains the SecretKey object using getKey() function and Converts it to String.
 	 * NOTE: Do not use this function in actual code
 	 * 		 Use only for debugging operations
+	 * @param entryName String containing Alias/Name of the entry
+	 * @param entryKeyString String containing entry key/password
+	 * @throws IOException If given password is incorrect
+	 * @throws UnrecoverableEntryException If given key String is incorrect
+	 * @throws NullPointerException If entry with the given name doesn't exists
 	 */	
 	public String getKeyString(String entryName, String entryKeyString) throws UnrecoverableEntryException, NullPointerException, IOException {
 		SecretKey secretKey = getKey(entryName, entryKeyString);

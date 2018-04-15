@@ -29,7 +29,7 @@ public class BTOperations {
 
 	static Logger logger;
 	
-	/*
+	/**
 	 *  Initializes logger
 	 */
 	public static void init() {
@@ -37,11 +37,12 @@ public class BTOperations {
 		logger.info("BTOperations Initialized");
 	}
 	
-	/*
-	 * Checks if bluetooth device is on
+	/**
+	 * Checks if bluetooth is turned on
 	 * 
-	 * @param useRecurssion if true Recursively checks whether is device on untill
+	 * @param useRecurssion If true, Recursively checks whether is device on untill
 	 * 'cancel' button is clicked
+	 * @return true, if bluetooth is on else false
 	 */
 	public static boolean isPowerOn(boolean useRecurssion) {
 		if (useRecurssion) {
@@ -69,11 +70,11 @@ public class BTOperations {
 		}
 	}
 
-	/*
-	 * Returns all Bluetooth devices paired with the current computer Check for
+	/**
+	 * Returns all Bluetooth devices paired with the current computer. Check for
 	 * isPowerOn() before calling this function
 	 * 
-	 * @return: RemoteDevice[] null if device is powered off
+	 * @return Array of bluetooth devices, null if device is powered off
 	 */
 	public static RemoteDevice[] getPairedDevices() {
 		if (!isPowerOn(false)) {
@@ -88,10 +89,10 @@ public class BTOperations {
 		}
 	}
 
-	/*
+	/**
 	 * Return array of UUIDs supported by our system
 	 * 
-	 * @return array of UUIDs
+	 * @return Array of UUIDs
 	 */
 	public static long[] getUUIDs() {
 		long[] uuids = new long[] {
@@ -101,7 +102,7 @@ public class BTOperations {
 		return uuids;
 	}
 	
-	/*
+	/**
 	 * Checks range of the specified bluetooth device using handshake mechanism
 	 * 
 	 * @param device Bluetooth device whose range has to be checked
@@ -165,11 +166,11 @@ public class BTOperations {
 		}
 	}
 	
-	/*
+	/**
 	 * Checks range of the specified bluetooth device using handshake mechanism
 	 * 
-	 * @param MAC Address of the Bluetooth device whose range has to be checked
-	 * @param service in long format of the service to be considered
+	 * @param mac MAC Address of the Bluetooth device whose range has to be checked
+	 * @param service UUID in long format of the service to be considered
 	 * 
 	 * @return true: If found in the range else false
 	 */
@@ -181,9 +182,9 @@ public class BTOperations {
 			return checkRange(device, new UUID(service));
 	}
 	
-	/*
+	/**
 	 * Returns RemoteDevice by MAC
-	 * @param mac address of the Device in String
+	 * @param mac MAC address of the Device in String
 	 * @return RemoteDevice
 	 */
 	public static RemoteDevice getRemoteDevice(String mac) {

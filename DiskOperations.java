@@ -18,16 +18,17 @@ public class DiskOperations {
 	public final static String loggerName = "default.runtime";
 	static Logger logger;
 	
-	/*
-	 *  Initializes logger
+	/**
+	 * Initializes logger
 	 */
 	public static void init() {
 		logger = Logger.getLogger(loggerName);
 		logger.info("DiskOperations Initialized");
 	}
 	
-	/*
+	/**
 	 * Creates safe and attaches it to the disk
+	 * @param safe SafeData object for which vhd file as to be created
 	 */
 	public static void createDisk(SafeData safe) {
 		try {
@@ -55,9 +56,9 @@ public class DiskOperations {
 		}
 	}
 	
-	/*
+	/**
 	 * Attaches the specified disk
-	 * @param safeName: safeName in .vhd format
+	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void attachDisk(String safeName) {
 		try {
@@ -78,9 +79,9 @@ public class DiskOperations {
 		}
 	}
 	
-	/*
+	/**
 	 * Detaches the specified disk
-	 * @param safeName: safeName in .vhd format
+	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void dettachDisk(String safeName) {
 		try {
@@ -101,8 +102,9 @@ public class DiskOperations {
 		}
 	}
 	
-	/*
+	/**
 	 * Runs the diskpart script in background mode
+	 * @param fileName Name of the script to be run in Temp Folder 
 	 */
 	private static void runScript(String fileName) {
 		try {
@@ -125,8 +127,9 @@ public class DiskOperations {
 		}
 	}
 	
-	/*
-	 * Returns the smallest drive letter which is greater than equal to P: and which is available
+	/**
+	 *  Returns the smallest drive letter which is greater than equal to P, and which is available
+	 * @return Drive letter
 	 */
 	public static char getFreeLetter() {
 		try {
@@ -182,10 +185,13 @@ public class DiskOperations {
 		return 'p';
 	}
 
-	/* Returns the string of command used to create the diskpart script
-	 * @param: String vhd file name
-	 * @param: int size of disk in MB
-	 * @param: String label to be set for the disk 
+	/** 
+	 * Returns the string of command used to create the diskpart script
+	 * @param name vhd file name
+	 * @param size size of disk in MB
+	 * @param label name to be set for the disk
+	 * @param letter Letter to be assigned to the disk
+	 * @return String containing commands that can be used to create the vhd of specified attributes
 	 */
 	private static String getCreateCommands(String name, int size, String label, char letter) {
 		return "create vdisk file=\"" + tempPath + "\\" + name + ".vhd\" maximum=" + size + "\n"
@@ -198,10 +204,11 @@ public class DiskOperations {
 				+ "detach vdisk";
 	}
 
-	/*
-	 * Hides the file
-	 * @param: Name of the file in Res folder
-	 * @throws: FileNotFoundException if file does not exist in Res folder
+	/**
+	 * Hides the given file by setting attributes:
+	 * 		Hidden = true and System = true
+	 * @param fileName Name of the file in Res folder
+	 * @throws FileNotFoundException If file does not exist in Res folder
 	 */
 	public static void hideFile(String fileName) throws FileNotFoundException {
 		String filePath = resPath + "\\" + fileName;
