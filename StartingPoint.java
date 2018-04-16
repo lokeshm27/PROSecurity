@@ -189,6 +189,8 @@ public class StartingPoint {
 		CryptOperations.init();
 		DiskOperations.init();
 		TrayOperations.init();
+		KeyStorage keyStorage = new KeyStorage(KeyStorage.defaultPassword);
+		VolatileBag.keyStorage = keyStorage;
 		
 		//TODO Process current arguments
 		String msg = getFormattedArgs(args);
