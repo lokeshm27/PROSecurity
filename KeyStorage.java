@@ -25,7 +25,7 @@ public class KeyStorage {
 	 * Pass fileKey in String format which is used for integrity checking
 	 * Optional KeyStore file path, If not passed, Default KeyStore file will be used
 	 */
-	
+	public final static String defaultPassword = "PROSecurity057";
 	public final static String loggerName = "default.runtime";
 
 	static Logger logger;
