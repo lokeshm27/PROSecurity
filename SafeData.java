@@ -7,7 +7,7 @@ import java.io.Serializable;
 public class SafeData implements Serializable{
 	// Final data
 	private static final long serialVersionUID = 1L;
-	
+	public final static String loggerName = "default.runtime";
 	public static final String safeExt = ".sdat";
 	public static String rootPath = System.getenv("LocalAppData") + "\\PROSecurity";
 	public static String resPath = rootPath + "\\Res";
@@ -26,17 +26,17 @@ public class SafeData implements Serializable{
 	protected String recoveryEmail;
 	protected String hint = null;
 	
-	/*
-	 * Constructor: Initializes object for lock Type != PWD_ONLY
+	/**
+	 * Initializes object for lock Type != PWD_ONLY
 	 * 
-	 * @param name: String Safe name
-	 * @param lockType: Int
-	 * @param device: Bluetooth device
-	 * @param service: UUID of service to be used
-	 * @param recoveryEmail: E-Mail address used for device recovery
-	 * @param hint: String Used for password recovery
+	 * @param name String Safe name
+	 * @param lockType Int
+	 * @param mac String containing MAC address of the Bluetooth device
+	 * @param service Long UUID of service to be used
+	 * @param recoveryEmail E-Mail address used for device recovery
+	 * @param hint String Used for password recovery
 	 * 
-	 * @throws IllegalArgumentException: if lockType = PWD_ONLY
+	 * @throws IllegalArgumentException If lockType = PWD_ONLY
 	 */
 	public SafeData(String name, int lockType, String mac, long service, int size, String recoveryEmail, String hint) throws IllegalArgumentException {
 		if(lockType == PWD_ONLY) {
@@ -52,12 +52,13 @@ public class SafeData implements Serializable{
 	}
 	
 	
-	/*
-	 * Constructor: Initializes object with safeName and lockType = PWD_ONLY
+	/**
+	 * Initializes object with safeName and lockType = PWD_ONLY.
 	 * 		Use other constructor for other case
 	 * 
-	 * @param name: String Safe Name
-	 * @param hint: String Used for password recovery
+	 * @param name String Safe Name
+	 * @param size Int Size of the safe
+	 * @param hint String Used for password recovery
 	 */
 	public SafeData(String name, int size, String hint) {
 		this.name = name;
@@ -66,9 +67,9 @@ public class SafeData implements Serializable{
 		this.hint = hint;
 	}
 	
-	/*
+	/**
 	 * Copy constructor
-	 * @param: SafeData object
+	 * @param safeData SafeData object from which data has to be copied
 	 */
 	public SafeData(SafeData safeData) {
 		this.name = safeData.getName();
@@ -92,25 +93,25 @@ public class SafeData implements Serializable{
 		}
 	}
 
-	/*
-	 * @return safeName: String
+	/**
+	 * @return Name of the safe
 	 */
 	public String getName() {
 		return name;
 	}
 	 
 	
-	/*
-	 *@return lockType: int 
+	/**
+	 *@return lockType 
 	 */
 	public int getLockType() {
 		return lockType;
 	}
 	
 	
-	/*
-	 * @return mac: String
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
+	/**
+	 * @return MAC address
+	 * @throws IllegalAccessException If lockType is set to PWD_ONLY
 	 */
 	public String getMac() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
@@ -120,9 +121,9 @@ public class SafeData implements Serializable{
 		}
 	}
 
-	/*
+	/**
 	 * @return UUID of service to be used
-	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
+	 * @throws IllegalAccessException If lockType is set to PWD_ONLY
 	 */
 	private long getService() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
@@ -132,17 +133,16 @@ public class SafeData implements Serializable{
 		}
 	}
 	
-	/*
-	 * @return size: Int
+	/**
+	 * @return size of the safe
 	 */
 	public int getSize() {
 		return size;
 	}
 
 	
-	/*
-	 * @return recoveryEmail: String
-	 * 
+	/** 
+	 * @return recovery Email
 	 * @throws IllegalAccessException: If lockType is set to PWD_ONLY
 	 */
 	public String getRecoveryEmail() throws IllegalAccessException  {
@@ -154,8 +154,8 @@ public class SafeData implements Serializable{
 	}
 
 
-	/*
-	 * @return true: if hint is set
+	/**
+	 * @return true: if hint is set.
 	 * 		   false: if hint is not set i.e. hint == null
 	 */
 	public boolean isSetHint() {
@@ -166,10 +166,10 @@ public class SafeData implements Serializable{
 	}
 
 	
-	/*
-	 * @return hint: String
+	/**
+	 * @return Hint
 	 * 
-	 * @throws IllegalAccessException: If hint == null
+	 * @throws IllegalAccessException If hint == null
 	 */
 	public String getHint() throws IllegalAccessException {
 		if(hint == null) {
@@ -179,13 +179,17 @@ public class SafeData implements Serializable{
 	}
 
 
-	/* returns safe file name
+	/** returns safe file name
 	 * @return String: Safe file name
 	 */
 	public String getSafeFileName() {
 		return name + "$"+ recoveryEmail;
 	}
 
+	/**
+	 * Writes the attributes of this object to SafeName.sdat file in Res folder using serialization
+	 * @throws IOException If failed to serialize contents
+	 */
 	public void serial() throws IOException {
 		File safeDat = new File(resPath + "\\" + this.name + safeExt);
 		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(safeDat));
