@@ -35,26 +35,10 @@ public class DiskOperations {
 	 * @param safe SafeData object for which vhd file as to be created
 	 */
 	public static void createDisk(SafeData safe) {
-		try {
-			String scriptName = "createScript" + safe.getName() + ".txt";
-			
-			logger.info("Creating VHD for safe: " + safe.getName());
-			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write(getCreateCommands(safe.getSafeFileName(), safe.getSize(), safe.getName(), getFreeLetter()));
-			pw.close();
-			
-			runScript(scriptName);
-			
-			File sourceFile = new File(tempPath + "\\" + safe.getSafeFileName() + ".vhd");
-			File destFile = new File(resPath + "\\" + safe.getSafeFileName() + ".prhd");
-			Files.copy(sourceFile.toPath(), destFile.toPath());
-			
-			attachDisk(safe.getSafeFileName() + ".vhd");
-		} catch (FileNotFoundException e) {
-			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
-		} catch (IOException e) {
-			logger.severe("IOException caught while copying VHD File: " + e.getMessage());
-		}
+		String command = getCreateCommands(safe.getSafeFileName(), safe.getSize(), safe.getName(), getFreeLetter());
+		logger.info("Creating VHD for safe: " + safe.getName());
+		
+		runCommand(command);
 	}
 	
 	/**
@@ -62,19 +46,10 @@ public class DiskOperations {
 	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void attachDisk(String safeName) {
-		try {
-			String scriptName = "attachScript" + safeName + ".txt";
-			logger.info("attaching disk: " + safeName);
-			
-			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
-					+ "attach vdisk");
-			pw.close();
-			
-			runScript(scriptName);
-		} catch (FileNotFoundException e) {
-			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
-		}
+		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
+				+ "attach vdisk";
+		logger.info("attaching disk: " + safeName);
+		runCommand(command);
 	}
 	
 	/**
@@ -82,55 +57,56 @@ public class DiskOperations {
 	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void dettachDisk(String safeName) {
-		try {
-			String scriptName = "detachScript" + safeName + ".txt";
-			logger.info("detaching disk: " + safeName);
-			
-			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write("select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
-					+ "detach vdisk");
-			pw.close();
-			
-			runScript(scriptName);
-		} catch (FileNotFoundException e) {
-			logger.warning("FileNotFoundException caught while writing to script file: " + e.getMessage());
-		}
+		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
+				+ "detach vdisk";
+		logger.info("detaching disk: " + safeName);
+		runCommand(command);
 	}
 	
 	/**
-	 * Runs the diskpart script in background mode
-	 * @param fileName Name of the script to be run in Temp Folder 
+	 * Creates a diskpart script and runs it in the background and deletes the script afterwards
+	 * @param command String containing commands delimited by '\n' except for the last line
 	 */
-	private static void runScript(String fileName) {
+	private static void runCommand(String command) {
 		try {
+			
+			File flag = new File(tempPath + "\\greenFlag.vhd");
+			
+			// Delete if flag already exists
+			if(flag.exists())
+				flag.delete();
+			
+			PrintWriter pw  = new PrintWriter(tempPath + "\\runScript.txt");
+			pw.write(command);
+			pw.write("\ncreate vdisk file=\"" + tempPath + "\\greenFlag.vhd\" maximum=10");
+			pw.close();
+			
 			File parentDir = new File(tempPath);
 			File diskLog = new File(tempPath + "\\diskpart.log");
 			ProcessBuilder pb = new ProcessBuilder();
 			pb.directory(parentDir);
 			pb.redirectErrorStream(true);
 			pb.redirectOutput(Redirect.appendTo(diskLog));
-			pb.command("cmd", "/c", "start", "/b", "diskpart", "/s", tempPath + "\\" + fileName);
+			pb.command("cmd", "/c", "start", "/b", "diskpart", "/s", tempPath + "\\runScript.txt");
 			Process p = pb.start();
 			p.waitFor();
 			
-			//Sleep for 15 secs before returning recommended
-			Thread.sleep(15000);
-			// wait for 15 
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						Thread.sleep(15000);
-					} catch (InterruptedException e) {
-						logger.warning("Thread waiting to delete diskpart script thread interrupted: " + e.getMessage());
-					}
-					new File(tempPath + "\\" + fileName).delete(); 
-				}
-				
-			}).start();
+			int i=0;
+			while(!flag.exists() && i<40) {
+				i++;
+				Thread.sleep(500);
+			}
+			if(!flag.exists()) {
+				logger.severe("Running diskpart script failed. Did not get the green flag after 20sec");
+			}
+			//Wait for 2 secs for writing vhd file
+			Thread.sleep(2000);
+			flag.delete();
+			new File(tempPath + "\\runScript.txt").delete();
+			
 		} catch (IOException e) {
 			logger.severe("IOException caught while running command: " + e.getMessage());
-		} catch (InterruptedException e) {
+		}  catch (InterruptedException e) {
 			logger.severe("Interrupted while finishing execution: " + e.getMessage());
 		}
 	}
@@ -143,18 +119,10 @@ public class DiskOperations {
 		try {
 			// Delete file
 			new File(tempPath + "\\diskpart.log").delete();
+			String command = "list volume";
 			
-			// Write script
-			String scriptName = "letterCheckScript.txt";
-			PrintWriter pw = new PrintWriter(tempPath + "\\" + scriptName);
-			pw.write("list volume");
-			pw.close();
-						
-			// Run the script
-			runScript(scriptName);
-			
-			//Delete File
-			new File(scriptName).delete();
+			// Run the command
+			runCommand(command);
 			
 			char biggestLetter = 'C';
 			boolean ready = false;
