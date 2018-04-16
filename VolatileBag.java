@@ -1,28 +1,21 @@
-import java.awt.TrayIcon;
 import java.util.HashMap;
 
 public class VolatileBag {
-	// Status and TrayIcon
-	volatile static boolean status;
-	volatile static TrayIcon tryaIcon;
-	
 	// Threads
-	volatile static ServerThread serverThread;
+	public volatile static ServerThread serverThread;
 	
-	// Frame boolean
+	//KeyStorage
+	public volatile static KeyStorage keyStorage;
+	
+	// Frame objects
 	volatile static boolean isSafe = false;
 	volatile static boolean isLock = false;
 	volatile static boolean isOptions = false;
 	volatile static boolean isAbout = false;
 	volatile static boolean isExit = false;
-	
-	// Frame objects
+
 	
 	//HashMap
-	volatile static HashMap<String, Safe> safes = new HashMap<String, Safe>();
-	
-	//Safes
-	volatile static boolean defaultSafeSet = false;
-	volatile static Safe defaultSafe;
+	public volatile static HashMap<String, Safe> safes = new HashMap<String, Safe>();
 	
 }
