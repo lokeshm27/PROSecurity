@@ -1,4 +1,6 @@
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
@@ -28,6 +30,8 @@ public class SafeViewer extends SelectionAdapter {
 	Safe safe;
 	SafeData data;
 	
+	private final String tempPath = StartingPoint.tempPath;
+	private final String resPath = StartingPoint.resPath;
 	public final String loggerName = "default.runtime";
 	
 	Shell dialog, parent;
@@ -810,7 +814,7 @@ public class SafeViewer extends SelectionAdapter {
 						logger.info(i + 1 + ": Checking for Service: " + uuid[i]);
 						int j = 0;
 						while (j < 3) {
-							if (!BTOperations.checkRange(mac, uuid[i]))
+							if (!BTOperations.checkRange(data.getMac(), uuid[i]))
 								break;
 							j++;
 							logger.info("Success time " + j+1 + " Sleep time 2");
@@ -823,6 +827,8 @@ public class SafeViewer extends SelectionAdapter {
 						i++;
 					} catch (InterruptedException e) {
 						logger.warning("newSafe thread was interrupted using sleep time 2");
+					} catch (IllegalAccessException e) {
+						logger.warning("Getting MAC address of SafeData data failed.!");
 					}
 				}
 
@@ -840,7 +846,7 @@ public class SafeViewer extends SelectionAdapter {
 				i = uuid.length;
 				logger.fine("Configuration success");
 			} else {
-				count = 6;
+				count = 7;
 				i = 1;
 				updateStart(count);
 				info = "Storing information...";
@@ -860,7 +866,7 @@ public class SafeViewer extends SelectionAdapter {
 			}
 			
 			// Add to list
-			i++;
+			i++; // i=2
 			info = "Updating list...";
 			updateProgress(i, info);
 			logger.info("Updating list in VolatileBag");
@@ -868,12 +874,31 @@ public class SafeViewer extends SelectionAdapter {
 			
 			
 			// TODO Stage 2
-			i++;
-			info="Creating safe...";
+			i++; //i=3
+			info="Creating Safe...";
 			updateProgress(i, info);
 			DiskOperations.createDisk(data);
 			
-			// TODO Stage 3
+			i++; //i=4
+			info = "Encrypting Safe...";
+			File sourceFile = new File(tempPath + "\\" + data.getSafeFileName() + ".vhd");
+			File destFile = new File(resPath + "\\" + data.getSafeFileName() + ".prhd");
+			try {
+				Files.copy(sourceFile.toPath(), destFile.toPath());
+			} catch (IOException e1) {
+				errorMsg = "Unable to encrypt files. Please try again";
+				logger.severe("Copying safe " + safe.getName());
+				return;
+			}
+			
+			i++; //i=5
+			info = "Storing Credentials...";
+			
+			i++; //i=6
+			info="Mounting safe...";
+			DiskOperations.attachDisk(data.getSafeFileName() + ".vhd");
+			
+			// TODO Stage 3 - Start threads
 			
 			logger.finest("Finishing process. Sleep time 3");
 			updateFinish();
