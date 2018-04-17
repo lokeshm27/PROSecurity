@@ -192,6 +192,22 @@ public class StartingPoint {
 		KeyStorage keyStorage = new KeyStorage(KeyStorage.defaultPassword);
 		VolatileBag.keyStorage = keyStorage;
 		
+		// Load all safe objects
+		logger.info("Loading safes ");
+		File resFolder = new File(resPath);
+		for(File file : resFolder.listFiles()) {
+			if(file.getName().endsWith(".sdat")) {
+				String name = file.getName().substring(0, file.getName().length() - 5);
+				try {
+					VolatileBag.safes.put(name, Safe.deserial(name));
+				} catch (FileNotFoundException e) {
+					logger.warning("FileNotFoundException caught: " + e.getMessage());
+				} catch (IOException e) {
+					logger.warning("IOException caight: " + e.getMessage());
+				}
+			}
+		}
+		
 		//TODO Process current arguments
 		String msg = getFormattedArgs(args);
 		if(msg != null) {
