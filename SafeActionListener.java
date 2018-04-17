@@ -38,12 +38,12 @@ public class SafeActionListener implements ActionListener{
 	public void showDialog() {
 		Display display = new Display();
 		shell = new Shell(display, SWT.TITLE | SWT.CLOSE | SWT.BORDER | SWT.MIN);
-		shell.setSize(600, 500);
+		shell.setSize(550, 500);
 		shell.setText("Safes - PROSecurity");
 		shell.setLayout(new FillLayout());
 		
 		Composite parent = new Composite(shell, SWT.BORDER);
-		parent.setSize(500, 500);
+		//parent.setSize(500, 500);
 		//GridData parentData = new GridData();
 		//parentData.grabExcessHorizontalSpace = true;
 		//parent.setLayoutData(parentData);
@@ -59,9 +59,15 @@ public class SafeActionListener implements ActionListener{
 		Font font = new Font(display, new FontData(fontData.getName(), 18, SWT.BOLD));
 		label.setFont(font);
 		
-		// Safe List
-		buildList(parent);
+		Composite list = new Composite(parent, SWT.BORDER);
+		list.setSize(250, 250);
+		GridData listData = new GridData(GridData.FILL_BOTH);
+		list.setLayoutData(listData);
+		GridLayout listLayout = new GridLayout(1, false);
+		list.setLayout(listLayout);
 		
+		// Safe List
+		buildList(list);		
 		Button addButton = new Button(parent, SWT.PUSH);
 		GridData addButtonData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		addButton.setLayoutData(addButtonData);
@@ -82,15 +88,10 @@ public class SafeActionListener implements ActionListener{
 	}
 	
 	
-	public void buildList(Composite parent) {
-		Composite list = new Composite(parent, SWT.BORDER);
-		list.setSize(400, 400);
-		GridData listData = new GridData(GridData.FILL_BOTH);
-		list.setLayoutData(listData);
-		GridLayout listLayout = new GridLayout(1, false);
-		list.setLayout(listLayout);
-		Label label = new Label(list, SWT.NONE);
-		label.setText("List goes here");
+	public void buildList(Composite list) {
+		for(Safe safe: VolatileBag.safes.values()) {
+			new SafeComposite(safe, list);
+		}
 	}
 	
 	
