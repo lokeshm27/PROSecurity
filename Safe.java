@@ -138,7 +138,7 @@ public class Safe extends SafeData {
 	 * 
 	 * @return boolean: authorized value
 	 */
-	public boolean getAuthorized() {
+	public boolean isAuthorized() {
 		return authorized;
 	}
 
