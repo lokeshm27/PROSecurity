@@ -28,7 +28,6 @@ import org.eclipse.swt.widgets.Text;
 public class Safe extends SafeData {
 
 	private static final long serialVersionUID = 1L;
-
 	private boolean unlocked = false;
 	private boolean authorized = false;
 	private SecretKey secretKey;
@@ -170,6 +169,7 @@ public class Safe extends SafeData {
 			if (!BTOperations.checkRange(mac, service)) {
 				logger.warning("BT Device not found. Returning...");
 				authorized = false;
+				SOptions.showError(null, "Error - PROSecurity", "Unlocking safe " + name + " failed. Bluetooth device not found.!");
 				return;
 			}
 			logger.fine("Bluetooth device found.!");
