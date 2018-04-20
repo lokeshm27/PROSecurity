@@ -3,6 +3,7 @@ import java.util.HashMap;
 public class VolatileBag {
 	// Threads
 	public volatile static ServerThread serverThread;
+	public volatile static SearchThread searchThread;
 	
 	//KeyStorage
 	public volatile static KeyStorage keyStorage;
