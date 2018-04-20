@@ -189,6 +189,8 @@ public class BTOperations {
 	 */
 	public static RemoteDevice getRemoteDevice(String mac) {
 		RemoteDevice[] devices = getPairedDevices();
+		if(devices == null) 
+			return null;
 		for(RemoteDevice device: devices) {
 			if(device.getBluetoothAddress().equals(mac))
 				return device;
