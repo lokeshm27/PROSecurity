@@ -107,7 +107,7 @@ public class StartingPoint {
 		}
 
 		if (!ok) {
-			SOptions.showError(new Shell(), "PROSecurity - Initialization Error",
+			SOptions.showError(null, "PROSecurity - Initialization Error",
 					"PROSecurity couldn't craete necessary folders in the path " + System.getenv("LocalAppData")
 							+ " for operation. PROSecurity may require additional Previlages.");
 			System.out.println("Error.!");
@@ -286,7 +286,7 @@ public class StartingPoint {
 			} catch (SocketException e) {
 				// TODO Add option to go to settings
 
-				SOptions.showError(new Shell(), "PROSecurity - Error",
+				SOptions.showError(null, "PROSecurity - Error",
 						"Another instance of PRO Security is already running, but we are unable to establish communication with it or we recieved unexcepted response.\n"
 								+ "This may be due to mismatch of Port address or some other application may be using the Port: "
 								+ port + "\n" + "Go to settings to change the Port Address");

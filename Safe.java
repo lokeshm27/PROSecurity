@@ -250,14 +250,14 @@ public class Safe extends SafeData {
 					ivNums = CryptOperations.toByte(VolatileBag.keyStorage.getKey(name + "-IV", password));
 				} catch (UnrecoverableEntryException e1) {
 					logger.warning("Unrecoverable exception caught: " + e1.getMessage());
-					SOptions.showError(new Shell(), "PROSecurity - Error", "Incorrect password for Safe: " + name +". \nTry again.");
+					SOptions.showError(null, "PROSecurity - Error", "Incorrect password for Safe: " + name +". \nTry again.");
 				} catch (NullPointerException e1) {
 					logger.severe("NullPointerException caught: " + e1.getMessage());
-					SOptions.showError(new Shell(), "PROSecurity- Runtime Error",
+					SOptions.showError(null, "PROSecurity- Runtime Error",
 							"An runtime error has occured.\nError Code: 401");
 				} catch (IOException e1) {
 					logger.severe("IOException caught: " + e1.getMessage());
-					SOptions.showError(new Shell(), "PROSecurity- Runtime Error",
+					SOptions.showError(null, "PROSecurity- Runtime Error",
 							"An runtime error has occured.\nError Code: 402");
 				}
 			} while (wrongPassword);

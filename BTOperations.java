@@ -48,7 +48,7 @@ public class BTOperations {
 		if (useRecurssion) {
 			boolean retry = true;
 			while (retry && !LocalDevice.isPowerOn()) {
-				retry = SOptions.showConfirm(new Shell(), "Bluetooth Search failed - PROSecurity",
+				retry = SOptions.showConfirm(null, "Bluetooth Search failed - PROSecurity",
 						"Failed to search for Bluetooth devices as Bluetooth is turned off. Please turn On the Bluetooth and Click 'OK' to retry.");
 			}
 
@@ -60,7 +60,7 @@ public class BTOperations {
 		} else {
 			if (!LocalDevice.isPowerOn()) {
 				if (!dontShow) {
-					SOptions.showInformation(new Shell(), "Bluetooth turnded off - PROSecurity",
+					SOptions.showInformation(null, "Bluetooth turnded off - PROSecurity",
 							"As Bluetooth turned off, some functions off PROSecurity may not work"
 									+ " untill its turned on.");
 					dontShow = true;

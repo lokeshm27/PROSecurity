@@ -134,6 +134,16 @@ public class SafeData implements Serializable{
 	}
 	
 	/**
+	 * Sets the service of the bluetooth device
+	 * @param service Long UUID of the service
+	 */
+	public void setService(long service) {
+		if(lockType != PWD_ONLY) {
+			this.service = service;
+		}
+	}
+	
+	/**
 	 * @return size of the safe
 	 */
 	public int getSize() {

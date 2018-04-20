@@ -821,7 +821,7 @@ public class SafeViewer extends SelectionAdapter {
 							Thread.sleep(500);
 						}
 						if (j == 3) {
-							service = uuid[i];
+							data.setService(uuid[i]);
 							break;
 						}
 						i++;

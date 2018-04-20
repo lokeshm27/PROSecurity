@@ -46,7 +46,7 @@ public class CryptOperations {
 			random.nextBytes(ivNum);
 		} catch (NoSuchAlgorithmException e) {
 			logger.severe("NoSuchAlgorithmException caught while generating IV");
-			SOptions.showError(new Shell(), "PROSecurity : Error-301", "An Error has occured while encrypting data. Error code:301");
+			SOptions.showError(null, "PROSecurity : Error-301", "An Error has occured while encrypting data. Error code:301");
 		}
 		return ivNum;
 	}
@@ -100,12 +100,12 @@ public class CryptOperations {
 			logger.severe("NoSuchAlgorithm exception caught: " + e.getMessage());
 		} catch (InvalidKeyException e) {
 			logger.severe("InvalidKeyException caught: " + e.getMessage());
-			SOptions.showError(new Shell(), "PROSecurity : Error-304", "Crypt operation on files failed. May be due to mismatch in the key");
+			SOptions.showError(null, "PROSecurity : Error-304", "Crypt operation on files failed. May be due to mismatch in the key");
 		} catch (InvalidAlgorithmParameterException | IllegalBlockSizeException e) {
 			logger.severe("InvalidAlgorithmParamentException caught: " + e.getMessage());
 		} catch (BadPaddingException e) {
 			logger.severe("BadPaddingException caught: " + e.getMessage() + " File not correctle encrypted or file has been tampered");
-			SOptions.showError(new Shell(), "PROSecurity : Error-306", "Decrypting file failed.!\nFile not correctly encrypted or File has been Corrupted/Tampered");
+			SOptions.showError(null, "PROSecurity : Error-306", "Decrypting file failed.!\nFile not correctly encrypted or File has been Corrupted/Tampered");
 		}
 	}
 

@@ -86,7 +86,7 @@ public class ProcessThread extends Thread {
 		logger.info("Processign message: " + message);
 		
 		//TODO Complete processing of message
-		SOptions.showInformation(new Shell(), "PROSecurity - Message", "A Message recieved : " + this.message);		
+		SOptions.showInformation(null, "PROSecurity - Message", "A Message recieved : " + this.message);		
 		return;
 	}
 }

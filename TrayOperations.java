@@ -71,7 +71,7 @@ public class TrayOperations {
 		} else {
 			isSupported = false;
 			logger.warning("System does not support tray Icon");
-			SOptions.showError(new Shell(), "PROSecurity - Error",
+			SOptions.showError(null, "PROSecurity - Error",
 					"Your system does not support tray icon. PROSecurity will continue to work without it.");
 		}
 	}
