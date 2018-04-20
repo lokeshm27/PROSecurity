@@ -125,7 +125,7 @@ public class SafeData implements Serializable{
 	 * @return UUID of service to be used
 	 * @throws IllegalAccessException If lockType is set to PWD_ONLY
 	 */
-	private long getService() throws IllegalAccessException {
+	public long getService() throws IllegalAccessException {
 		if(lockType != PWD_ONLY) {
 			return this.service;
 		} else {
