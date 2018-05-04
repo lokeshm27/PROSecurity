@@ -43,6 +43,7 @@ public class SearchThread extends Thread {
 					} catch (IllegalAccessException e) {
 						logger.warning("IllegalAccessException caught: " + e.getMessage());
 					}
+					VolatileBag.updateSafe();
 					Thread.sleep(getSleepTime());
 				}
 			} catch (InterruptedException e) {
@@ -56,6 +57,13 @@ public class SearchThread extends Thread {
 		if(!refresh) {
 			refresh = true;
 			Thread.currentThread().interrupt();
+			
+			try {
+				while(refresh)
+					Thread.sleep(200);
+			} catch (InterruptedException e) {
+				logger.info("SearchThread interrupted while waiting for refresh: " + e.getMessage());
+			}
 		}
 	}
 

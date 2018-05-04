@@ -46,7 +46,7 @@ public class DiskOperations {
 	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void attachDisk(String safeName) {
-		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
+		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + ".vhd\"\n"
 				+ "attach vdisk";
 		logger.info("attaching disk: " + safeName);
 		runCommand(command);
@@ -57,7 +57,7 @@ public class DiskOperations {
 	 * @param safeName Name of the safe in .vhd format which is in Temp Folder
 	 */
 	public static void dettachDisk(String safeName) {
-		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + "\"\n"
+		String command = "select vdisk file=\"" + tempPath + "\\" + safeName + ".vhd\"\n"
 				+ "detach vdisk";
 		logger.info("detaching disk: " + safeName);
 		runCommand(command);
@@ -73,8 +73,10 @@ public class DiskOperations {
 			File flag = new File(tempPath + "\\greenFlag.vhd");
 			
 			// Delete if flag already exists
-			if(flag.exists())
+			while(flag.exists())
 				flag.delete();
+			//new File(tempPath + "\\runScript.txt").delete();
+			
 			
 			PrintWriter pw  = new PrintWriter(tempPath + "\\runScript.txt");
 			pw.write(command);
@@ -98,9 +100,8 @@ public class DiskOperations {
 			}
 			if(!flag.exists()) {
 				logger.severe("Running diskpart script failed. Did not get the green flag after 20sec");
+				System.out.println("Diskpart script failed.!");
 			}
-			//Wait for 2 secs for writing vhd file
-			Thread.sleep(2000);
 			flag.delete();
 			new File(tempPath + "\\runScript.txt").delete();
 			
@@ -210,8 +211,13 @@ public class DiskOperations {
 		logger.info("Opening safe folder: " + safeLabel);
 		List <File>files = Arrays.asList(File.listRoots());
 		for (File f : files) {
-	        String discription = FileSystemView.getFileSystemView().getSystemDisplayName(f);
-	        if(!discription.isEmpty()) {
+			String discription = null;
+			try {
+	         discription = FileSystemView.getFileSystemView().getSystemDisplayName(f);
+			} catch (Exception e) {
+				
+			}
+	        if(discription != null && !discription.isEmpty()) {
 	        	String label = discription.substring(0, discription.length() - 5);
 	        	if(label.equals(safeLabel)) {
 	        		try {

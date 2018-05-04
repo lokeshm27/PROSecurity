@@ -1,3 +1,4 @@
+import java.awt.TrayIcon;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -5,10 +6,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.security.UnrecoverableEntryException;
 import java.util.logging.Logger;
-
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -34,6 +33,9 @@ public class Safe extends SafeData {
 	private byte[] ivNums;
 	private Logger logger;
 	private String password = null;
+	private Thread watchThread;
+	private boolean cancel = false;
+	private boolean watchRunning = false;
 
 	/**
 	 * Initializes object for lock Type != PWD_ONLY
@@ -156,26 +158,78 @@ public class Safe extends SafeData {
 		}
 		this.secretKey = secretKey;
 	}
-	
+
+	/**
+	 * Gets SecretKey Object
+	 * 
+	 * @return SecretKey Object associated with this safe
+	 * 
+	 * @throws IllegalAccessException:
+	 *             If unlocked = false
+	 */
+	/*
+	 * public SecretKey getSecretKey() throws IllegalAccessException { if
+	 * (!unlocked) { throw new
+	 * IllegalAccessException("Illegal Access to SecretKey: Unlocked = false"); }
+	 * return secretKey; }
+	 */
+
+	/**
+	 * Sets the ivNums for this safe
+	 * 
+	 * @param ivNums
+	 *            byte[] containing ivNums
+	 * @throws IllegalArgumentException
+	 *             if unlocked == true
+	 */
+	public void setIvNums(byte[] ivNums) throws IllegalArgumentException {
+		if (unlocked) {
+			throw new IllegalArgumentException("IllegalArgument SecretKey: Unlocked = true");
+		}
+		this.ivNums = ivNums;
+	}
+
 	/**
 	 * Unlocks the safe and attaches the disk to the device
 	 */
 	public void unlock() {
+		VolatileBag.safeOngoing = true;
 		boolean wrongPassword = false;
 		// Check for authorization
+		System.out.println("Trying to unlock safe: " + name + " lockType: " + lockType);
 		logger.info("Trying to unlock safe: " + name + " lockType: " + lockType);
 		if (lockType == MAC_ONLY || lockType == TWO_FACT) {
 			logger.info("Checking for bluetooth device: " + mac);
 			if (!BTOperations.checkRange(mac, service)) {
 				logger.warning("BT Device not found. Returning...");
 				authorized = false;
-				SOptions.showError(null, "Error - PROSecurity", "Unlocking safe " + name + " failed. Bluetooth device not found.!");
+				SOptions.showError(null, "Error - PROSecurity",
+						"Unlocking safe " + name + " failed. Bluetooth device not found.!");
+				VolatileBag.safeOngoing = false;
 				return;
 			}
 			logger.fine("Bluetooth device found.!");
 		}
 
-		if (lockType == PWD_ONLY || lockType == TWO_FACT) {
+		if (lockType == MAC_ONLY) {
+			try {
+				secretKey = VolatileBag.keyStorage.getKey(name, KeyStorage.defaultPassword);
+				ivNums = CryptOperations
+						.toByte(VolatileBag.keyStorage.getKey(name + "-IV", KeyStorage.defaultPassword));
+			} catch (UnrecoverableEntryException e1) {
+				logger.warning("Unrecoverable exception caught: " + e1.getMessage());
+				SOptions.showError(null, "PROSecurity - Error",
+						"Incorrect password for Safe: " + name + ". \nTry again.");
+			} catch (NullPointerException e1) {
+				logger.severe("NullPointerException caught: " + e1.getMessage());
+				SOptions.showError(null, "PROSecurity- Runtime Error",
+						"An runtime error has occured.\nError Code: 401");
+			} catch (IOException e1) {
+				logger.severe("IOException caught: " + e1.getMessage());
+				SOptions.showError(null, "PROSecurity- Runtime Error",
+						"An runtime error has occured.\nError Code: 402");
+			}
+		} else {
 			do {
 				wrongPassword = false;
 				logger.info("Requesting password: ");
@@ -238,7 +292,7 @@ public class Safe extends SafeData {
 						display.sleep();
 					}
 				}
-				display.dispose();
+				// display.dispose();
 
 				if (password == null || password.isEmpty()) {
 					logger.warning("Did not recieve password");
@@ -250,49 +304,68 @@ public class Safe extends SafeData {
 					ivNums = CryptOperations.toByte(VolatileBag.keyStorage.getKey(name + "-IV", password));
 				} catch (UnrecoverableEntryException e1) {
 					logger.warning("Unrecoverable exception caught: " + e1.getMessage());
-					SOptions.showError(null, "PROSecurity - Error", "Incorrect password for Safe: " + name +". \nTry again.");
+					return;
 				} catch (NullPointerException e1) {
 					logger.severe("NullPointerException caught: " + e1.getMessage());
-					SOptions.showError(null, "PROSecurity- Runtime Error",
-							"An runtime error has occured.\nError Code: 401");
+					return;
 				} catch (IOException e1) {
 					logger.severe("IOException caught: " + e1.getMessage());
-					SOptions.showError(null, "PROSecurity- Runtime Error",
-							"An runtime error has occured.\nError Code: 402");
+					return;
 				}
 			} while (wrongPassword);
-			
+
 			logger.fine("Correct password recieved. Decrypting file");
-			String inputFile = resPath + "\\" + getSafeFileName() + ".prhd";
-			String outputFile = tempPath + "\\" + getSafeFileName() + ".vhd";
-			CryptOperations.doOperation(Cipher.DECRYPT_MODE, secretKey, inputFile, outputFile, ivNums);
-			logger.fine("decrypting success. Attaching disk");
-			
-			
-			DiskOperations.attachDisk(name);
-			setUnlocked();
-			logger.finest("Unlocking safe " + name + " complete. Starting watch thread");
-			// TODO
+
 		}
+		String inputFile = resPath + "\\" + getSafeFileName() + ".prhd";
+		String outputFile = tempPath + "\\" + getSafeFileName() + ".vhd";
+		CryptOperations.doOperation(Cipher.DECRYPT_MODE, secretKey, inputFile, outputFile, ivNums);
+		logger.fine("decrypting success. Attaching disk");
+
+		DiskOperations.attachDisk(getSafeFileName());
+		setUnlocked();
+		logger.finest("Unlocking safe " + name + " complete. Starting watch thread");
+
+		if (lockType != PWD_ONLY)
+			startWatchThread();
+		VolatileBag.safeOngoing = false;
+
 	}
 
 	/**
-	 * Gets SecretKey Object
-	 * 
-	 * @return SecretKey Object associated with this safe
-	 * 
-	 * @throws IllegalAccessException:
-	 *             If unlocked = false
+	 * Locks the safe
 	 */
-	public SecretKey getSecretKey() throws IllegalAccessException {
-		if (!unlocked) {
-			throw new IllegalAccessException("Illegal Access to SecretKey: Unlocked = false");
+	public void lock() {
+		VolatileBag.safeOngoing = true;
+		// stop watch thread
+		stopWatchThread();
+		System.out.println("Trying to lock safe: " + name + " lockType: " + lockType);
+		// Detach
+		DiskOperations.dettachDisk(getSafeFileName());
+		setLocked();
+
+		TrayOperations.displayMessage("PROSecurity - Safe Secured", "Safe " + name + " has been successfully locked.!",
+				TrayIcon.MessageType.INFO);
+
+		logger.info("Encrypting disk");
+		String outputFile = resPath + "\\" + getSafeFileName() + ".prhd";
+		String inputFile = tempPath + "\\" + getSafeFileName() + ".vhd";
+		CryptOperations.doOperation(Cipher.ENCRYPT_MODE, secretKey, inputFile, outputFile, ivNums);
+		logger.fine("Encrypting file successful. Deleting file");
+
+		logger.info("deleting .vhd file");
+		File safeFile = new File(inputFile);
+		safeFile.delete();
+
+		if (safeFile.exists()) {
+			System.out.println("Deleting safe file failed");
 		}
-		return secretKey;
+		VolatileBag.safeOngoing = false;
+		logger.finest("Locking safe successful");
 	}
 
 	/**
-	 * Reads the .sdat file from Res folder and initializes this object
+	 * Reads the .sdat file from Res folder and initializes a object of this class
 	 * 
 	 * @param name
 	 *            String containg name of the Safe without extension
@@ -314,5 +387,56 @@ public class Safe extends SafeData {
 			return null;
 		}
 	}
+
+	/**
+	 * Starts watch thread for the safe
+	 */
+	public void startWatchThread() {
+		if (!watchRunning) {
+			cancel = false;
+			watchRunning = true;
+			watchThread = new Thread(watchRun);
+			watchThread.start();
+		}
+	}
+
+	/**
+	 * Stops watch thread of this safe
+	 */
+	public void stopWatchThread() {
+		try {
+			if (watchThread.isAlive()) {
+				System.out.println("Starting watch thread");
+				cancel = true;
+				watchRunning = false;
+				watchThread.interrupt();
+			}
+		} catch (Exception e) {
+
+		}
+	}
+
+	Runnable watchRun = new Runnable() {
+
+		@Override
+		public void run() {
+			logger.info("Initiating WatchThread for safe: " + name);
+			System.out.println("Starting watch thread...");
+			while (!cancel && !Thread.currentThread().isInterrupted()) {
+				try {
+					System.out.println("WatchThread checking " + name);
+					if (!BTOperations.checkRange(mac, service)) {
+						logger.info(name + ": WatchThread: BT Device not found, locking device.");
+						lock();
+						VolatileBag.updateSafe();
+					}
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					logger.warning("Safe WatchThread interrupted: " + e.getMessage());
+				}
+			}
+			System.out.println("WatchThread exiting...");
+		}
+	};
 
 }

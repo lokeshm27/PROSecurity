@@ -1,4 +1,4 @@
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class VolatileBag {
 	// Threads
@@ -14,9 +14,24 @@ public class VolatileBag {
 	volatile static boolean isOptions = false;
 	volatile static boolean isAbout = false;
 	volatile static boolean isExit = false;
+	volatile public static boolean safeOngoing = false;
+	volatile static SafeActionListener safeListener;
 
 	
 	//HashMap
-	public volatile static HashMap<String, Safe> safes = new HashMap<String, Safe>();
+	public volatile static ConcurrentHashMap<String, Safe> safes = new ConcurrentHashMap<String, Safe>();
 	
+	public static void updateSafe() {
+		try {
+			if(!safeOngoing) {
+			safeListener.shell.getDisplay().asyncExec(new Runnable() {
+				public void run() {
+					safeListener.buildList();
+				}
+			});
+			}
+		} catch (Exception e) {
+			//e.printStackTrace();
+		}
+	}
 }

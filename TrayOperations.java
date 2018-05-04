@@ -9,7 +9,6 @@ import java.awt.TrayIcon.MessageType;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import org.eclipse.swt.widgets.Shell;
 
 public class TrayOperations {
 	public final static String loggerName = "default.runtime";
@@ -43,8 +42,9 @@ public class TrayOperations {
 				exitItem = new MenuItem("Exit");
 
 				// TODO Add action listener to MenuItems
-
-				safeItem.addActionListener(new SafeActionListener());
+				SafeActionListener safeListener = new SafeActionListener();
+				VolatileBag.safeListener = safeListener;
+				safeItem.addActionListener(safeListener);
 				exitItem.addActionListener(new ExitActionListener());
 
 				menu.add(safeItem);

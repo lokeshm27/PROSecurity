@@ -1,4 +1,8 @@
+import java.awt.TrayIcon;
+
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
@@ -42,7 +46,7 @@ public class SafeComposite extends Composite{
 		new Label(this, SWT.NONE).setText(" Size: " + sizeString[i]);
 		
 		Button edit = new Button(this, SWT.PUSH);
-		edit.setText(" Edit Safe ");
+		edit.setText(" Delete Safe ");
 		if(safe.isUnlocked() || !safe.isAuthorized()) {
 			edit.setEnabled(false);
 		}
@@ -62,6 +66,62 @@ public class SafeComposite extends Composite{
 		} else {
 			unlock.setText(" Lock ");
 		}
+		unlock.addSelectionListener(new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				boolean lockMode = true;
+				if(unlock.getText() == " Unlock ") 
+					lockMode = false;
+				
+				unlock.setText("Processing");
+				edit.setEnabled(false);
+				unlock.setEnabled(false);
+				System.out.println(unlock.getText());
+				if(!lockMode) {
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							safe.unlock();
+							parent.getDisplay().asyncExec(new Runnable() {
+								public void run() {
+									if(safe.isUnlocked()) {
+										unlock.setText(" Lock ");
+										unlock.setEnabled(true);
+										SOptions.showInformation(parent.getShell(), "PROSecurity - Success", "Safe " + safe.getName() + " successfully unlocked.");
+										VolatileBag.updateSafe();
+									} else {
+										unlock.setText(" Unlock ");
+										unlock.setEnabled(true);
+										edit.setEnabled(true);
+										SOptions.showInformation(parent.getShell(), "PROSecurity - Failed", "Failed to unlock Safe " + safe.getName());
+										VolatileBag.updateSafe();
+									}
+								}
+							});
+						}
+					}).start();
+					
+				} else {
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							safe.lock();
+							parent.getDisplay().asyncExec(new Runnable() {
+								public void run() {
+									unlock.setText(" Unlock ");
+									edit.setEnabled(true);
+									unlock.setEnabled(true);
+									SOptions.showInformation(parent.getShell(), "PROSecurity - Success", "Safe " + safe.getName() + " successfully locked.");
+									VolatileBag.updateSafe();
+								}
+							});
+						}
+					}).start();
+				}
+			}
+		
+		});
 		
 		Label imageLabel = new Label(this, SWT.NONE);
 		Image image;

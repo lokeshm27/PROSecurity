@@ -8,7 +8,6 @@ import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
-import org.eclipse.swt.widgets.Shell;
 
 public class BTOperations {
     public final static long OBEX_OBJECT_PUSH = 0x1105;

@@ -5,8 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Logger;
 
-import org.eclipse.swt.widgets.Shell;
-
 public class ProcessThread extends Thread {
 	
 	public final static String loggerName = "default.runtime";

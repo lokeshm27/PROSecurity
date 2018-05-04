@@ -6,17 +6,15 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Logger;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import org.eclipse.swt.widgets.Shell;
 
 public class CryptOperations {
 	public final static String loggerName = "default.runtime";
@@ -42,7 +40,7 @@ public class CryptOperations {
 		SecureRandom random;
 		try {
 			logger.info("Generating Initialization Vector IV");
-			random = SecureRandom.getInstance("AES");
+			random = SecureRandom.getInstance("SHA1PRNG");
 			random.nextBytes(ivNum);
 		} catch (NoSuchAlgorithmException e) {
 			logger.severe("NoSuchAlgorithmException caught while generating IV");
@@ -109,7 +107,6 @@ public class CryptOperations {
 		}
 	}
 
-	
 	/** Converts byte[] to SecretKey object used for storing IV in the KeyStore
 	 * 
 	 * @param ivNum byte[] containing the IV
@@ -126,6 +123,22 @@ public class CryptOperations {
 	 */
 	public static byte[] toByte(SecretKey key) {
 		return key.getEncoded();
+	}
+	
+	/**
+	 * Generates secure random secret key of instance AES using KeyGenerator
+	 * @return SecretKey object generated
+	 */
+	public static SecretKey generateRandomKey() {
+		try {
+			KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+			keyGen.init(128);
+			return keyGen.generateKey();
+		} catch (NoSuchAlgorithmException e) {
+			logger.severe("NoSuchAlgorithmException caught while getting instance of keygenerator AES: " + e.getMessage());
+			SOptions.showError(null, "Error - PROSecurity", "An runtime error has occured. Please try again.\nError Code: 307");
+		}
+		return null;
 	}
 
 }

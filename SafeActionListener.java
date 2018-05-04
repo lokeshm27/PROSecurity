@@ -13,8 +13,10 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 
 public class SafeActionListener implements ActionListener{
@@ -22,6 +24,8 @@ public class SafeActionListener implements ActionListener{
 
 	Logger logger;
 	Shell shell;
+	Link refreshLink;
+	Composite list, parent;
 	
 	public SafeActionListener() {
 		logger = Logger.getLogger(loggerName);
@@ -42,7 +46,7 @@ public class SafeActionListener implements ActionListener{
 		shell.setText("Safes - PROSecurity");
 		shell.setLayout(new FillLayout());
 		
-		Composite parent = new Composite(shell, SWT.BORDER);
+		parent = new Composite(shell, SWT.BORDER);
 		//parent.setSize(500, 500);
 		//GridData parentData = new GridData();
 		//parentData.grabExcessHorizontalSpace = true;
@@ -59,7 +63,20 @@ public class SafeActionListener implements ActionListener{
 		Font font = new Font(display, new FontData(fontData.getName(), 18, SWT.BOLD));
 		label.setFont(font);
 		
-		Composite list = new Composite(parent, SWT.BORDER);
+		refreshLink = new Link(parent, SWT.NONE);
+		refreshLink.setText("<a>Refresh</a>");
+		GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
+		refreshLink.setLayoutData(gridData);
+		refreshLink.addSelectionListener(new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				refreshList();
+			}
+		});
+		
+		
+		list = new Composite(parent, SWT.BORDER);
 		list.setSize(250, 250);
 		GridData listData = new GridData(GridData.FILL_BOTH);
 		list.setLayoutData(listData);
@@ -67,7 +84,9 @@ public class SafeActionListener implements ActionListener{
 		list.setLayout(listLayout);
 		
 		// Safe List
-		buildList(list);		
+		refreshLink.setText("<a>Loading list..</a>");
+		buildList();
+		
 		Button addButton = new Button(parent, SWT.PUSH);
 		GridData addButtonData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		addButton.setLayoutData(addButtonData);
@@ -87,11 +106,24 @@ public class SafeActionListener implements ActionListener{
 		display.dispose();
 	}
 	
+	public void refreshList() {
+		if(refreshLink.getText() !="<a>Refreshing</a>" && refreshLink.getText() != "<a>Loading List</a>") {
+			buildList();
+		}
+		SOptions.showInformation(shell, "Success - PROSecurity", "Safe list has been successfully updated.!");
+	}
 	
-	public void buildList(Composite list) {
+	public void buildList() {
+		refreshLink.setText("<a>Refreshing...</a>");
+		VolatileBag.searchThread.refresh();
+		for(Control ctrl : list.getChildren())
+			ctrl.dispose();
+		
 		for(Safe safe: VolatileBag.safes.values()) {
 			new SafeComposite(safe, list);
 		}
+		list.layout();
+		refreshLink.setText("<a>Refresh</a>");
 	}
 	
 	

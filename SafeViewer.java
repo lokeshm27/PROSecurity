@@ -5,6 +5,9 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -785,6 +788,7 @@ public class SafeViewer extends SelectionAdapter {
 	 * Runnable that configures, validates and adds new Safe
 	 */
 	Runnable newSafeRun = new Runnable() {
+
 		public void run() {
 			logger.info("Starting newSafe thread...");
 			int count, i;
@@ -853,6 +857,28 @@ public class SafeViewer extends SelectionAdapter {
 				updateProgress(i, info);
 			}
 			disableCancel();
+			
+			Safe safeData = new Safe(data);
+			
+			// Writing secretKey and ivNums
+			SecretKey secretKey = null;
+			byte[] ivNums = null;
+			try {
+				secretKey = CryptOperations.generateRandomKey();
+				ivNums = CryptOperations.generateIv();
+				if(data.getLockType() == Safe.PWD_ONLY || data.getLockType() == Safe.TWO_FACT) {
+					VolatileBag.keyStorage.storeKey(data.getName(), secretKey, passwordString);
+					VolatileBag.keyStorage.storeKey(data.getName() + "-IV", CryptOperations.toSecretKey(ivNums), passwordString);
+				} else {
+					VolatileBag.keyStorage.storeKey(data.getName(), secretKey, KeyStorage.defaultPassword);
+					VolatileBag.keyStorage.storeKey(data.getName() + "-IV", CryptOperations.toSecretKey(ivNums), KeyStorage.defaultPassword);
+				}
+				safeData.setSecretKey(secretKey);
+				safeData.setIvNums(ivNums);
+			} catch (IOException e) {
+				logger.severe("IOException occured while storing key object: " + e.getMessage());
+				SOptions.showError(dialog, "Error - PROSecurity", "An run-time error has occured. Please try again.\nError Code: ");
+			}
 
 			// Serializing object
 			info = "Writing to disk...";
@@ -870,24 +896,27 @@ public class SafeViewer extends SelectionAdapter {
 			info = "Updating list...";
 			updateProgress(i, info);
 			logger.info("Updating list in VolatileBag");
-			VolatileBag.safes.put(data.getName(), new Safe(data));
+			VolatileBag.safes.put(data.getName(), safeData);
 			
 			
 			// TODO Stage 2
 			i++; //i=3
 			info="Creating Safe...";
 			updateProgress(i, info);
+			System.out.println("Creating disk..");
 			DiskOperations.createDisk(data);
 			
 			i++; //i=4
 			info = "Encrypting Safe...";
-			File sourceFile = new File(tempPath + "\\" + data.getSafeFileName() + ".vhd");
-			File destFile = new File(resPath + "\\" + data.getSafeFileName() + ".prhd");
+			String sourceFile = tempPath + "\\" + data.getSafeFileName() + ".vhd";
+			String destFile = resPath + "\\" + data.getSafeFileName() + ".prhd";
+			System.out.println("Copying From: " + sourceFile + " TO: " + destFile);
 			try {
-				Files.copy(sourceFile.toPath(), destFile.toPath());
-			} catch (IOException e1) {
+				CryptOperations.doOperation(Cipher.ENCRYPT_MODE, secretKey, sourceFile, destFile, ivNums);
+			} catch (Exception e1) {
+				e1.printStackTrace();
 				errorMsg = "Unable to encrypt files. Please try again";
-				logger.severe("Copying safe " + safe.getName());
+				logger.severe("Copying safe " + data.getName());
 				return;
 			}
 			
@@ -896,14 +925,16 @@ public class SafeViewer extends SelectionAdapter {
 			
 			i++; //i=6
 			info="Mounting safe...";
-			DiskOperations.attachDisk(data.getSafeFileName() + ".vhd");
+			DiskOperations.attachDisk(data.getSafeFileName());
 			
 			// TODO Stage 3 - Start threads
-			
+			safeData.setUnlocked();
+			if(safeData.getLockType()!=Safe.PWD_ONLY)
+				safeData.startWatchThread();
 			logger.finest("Finishing process. Sleep time 3");
 			updateFinish();
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				logger.warning("newSafe thread was interrupted during sleep time 3: " + e.getMessage());
 			}
