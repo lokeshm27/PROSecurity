@@ -243,6 +243,7 @@ public class SafeComposite extends Composite{
 
 					if (password == null || password.isEmpty()) {
 						logger.warning("Did not recieve password");
+						onFail();
 						return;
 					}
 
@@ -268,9 +269,14 @@ public class SafeComposite extends Composite{
 					// Updating list
 					VolatileBag.safes.remove(safe.getName());
 					File safeFile = new File(resPath + "\\" + safe.getSafeFileName() + ".prhd");
+					File datFile = new File(resPath + "\\" + safe.getName() + ".sdat");
 					int i=0;
 					while(safeFile.exists() && i<200)
 						safeFile.delete();
+					i = 0;
+					while(datFile.exists() && i<200)
+						datFile.delete();
+					
 					if(safe.getLockType() != Safe.MAC_ONLY) {
 						try {
 							VolatileBag.keyStorage.deleteEntry(safe.getName(), KeyStorage.defaultPassword);
@@ -313,6 +319,27 @@ public class SafeComposite extends Composite{
 		help.setLayoutData(gridData);
 		help.setText("<a>Need help with this safe?</a>");
 		help.setToolTipText("Use this option to recover this safe if you forgot password or lost your bluetooth device.");
+		help.addSelectionListener(new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				if(safe.getLockType()!=Safe.MAC_ONLY) {
+					if(safe.isSetHint()) {
+						try {
+							SOptions.showInformation(getShell(), "PROSecurity - Help", "Password hint: " + safe.getHint());
+						} catch (IllegalAccessException e) {
+							logger.warning("IllegalAccessException caught while retieving hint: " + e.getMessage());
+						}
+					} else {
+						SOptions.showInformation(getShell(), "PROSecurity - Help", "Password hint not set.!");
+					}
+				} else {
+					SOptions.showInformation(getShell(), "PROSecurity - Help", "No help available.!");
+				}
+			}
+		
+		});
+	
 	}
 
 }
