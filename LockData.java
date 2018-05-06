@@ -13,45 +13,30 @@ public class LockData implements Serializable {
 	private String mac;
 	private int lockType;
 	
-	/*
-	 * Constructor: Initializes the object with MAC
-	 * @param mac: String containing MAC address of the device
+	/**
+	 * Constructor: Initializes the object with MAC and lockType
+	 * @param lockType int containing lock type WIN_LOCK or PRO_LOCK
+	 * @param mac String containing MAC address of the device
 	 */
-	public LockData(String mac) {
+	public LockData(int lockType, String mac) {
 		this.mac = mac;
-		this.lockType = PRO_LOCK;
+		this.lockType = lockType;
 	}
 	
-	
-	/*
-	 * Constructor: Initializes object with lockType = WIN_LOCK
-	 * 
-	 * Use other constructor for other case
-	 */
-	public LockData() {
-		this.lockType = WIN_LOCK;
-	}
-	
-	
-	/*
-	 *@return lockType: int 
+	/**
+	 *@return lockType int 
 	 */
 	public int getLockType() {
 		return lockType;
 	}
 	
 	
-	/*
-	 * @return mac: String
-	 * @throws IllegalAccessException: If lockType is set to WIN_LOCK
+	/**
+	 * Returns mac address
+	 * @return mac String
 	 */
-	public String getMac() throws IllegalAccessException {
-		if(lockType == PRO_LOCK) {
-			return mac;
-		} else {
-			throw new IllegalAccessException("Illegal Access to MAC : Not Defined");
-		}
+	public String getMac() {
+		return mac;
 	}
 	
-
 }
