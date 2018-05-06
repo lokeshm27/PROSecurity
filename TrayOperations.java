@@ -17,7 +17,7 @@ public class TrayOperations {
 	private static boolean isSupported;
 	private static boolean defaultSafeSet = false;
 	private static Safe defaultSafe;
-	private static MenuItem safeItem, loginItem, settingsItem, aboutItem, exitItem;
+	private static MenuItem safeItem, lockItem, settingsItem, aboutItem, exitItem;
 	private static TrayIcon trayIcon;
 	private static URL url;
 	private static Image greenShield, yellowShield;
@@ -36,7 +36,7 @@ public class TrayOperations {
 				PopupMenu menu = new PopupMenu();
 
 				safeItem = new MenuItem("Safes");
-				loginItem = new MenuItem("Auto Lock");
+				lockItem = new MenuItem("Smart Lock");
 				settingsItem = new MenuItem("Settings");
 				aboutItem = new MenuItem("About PROSecurity");
 				exitItem = new MenuItem("Exit");
@@ -45,10 +45,11 @@ public class TrayOperations {
 				SafeActionListener safeListener = new SafeActionListener();
 				VolatileBag.safeListener = safeListener;
 				safeItem.addActionListener(safeListener);
+				lockItem.addActionListener(new LockActionListener());
 				exitItem.addActionListener(new ExitActionListener());
 
 				menu.add(safeItem);
-				menu.add(loginItem);
+				menu.add(lockItem);
 				menu.addSeparator();
 				menu.add(settingsItem);
 				menu.add(aboutItem);
