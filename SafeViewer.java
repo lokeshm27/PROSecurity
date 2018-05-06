@@ -1,13 +1,10 @@
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
