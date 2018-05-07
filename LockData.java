@@ -12,13 +12,14 @@ public class LockData implements Serializable {
 	//Object Data
 	private String mac;
 	private int lockType;
+	long service;
 	
 	/**
 	 * Constructor: Initializes the object with MAC and lockType
 	 * @param lockType int containing lock type WIN_LOCK or PRO_LOCK
 	 * @param mac String containing MAC address of the device
 	 */
-	public LockData(int lockType, String mac) {
+	public LockData(int lockType, String mac, long service) {
 		this.mac = mac;
 		this.lockType = lockType;
 	}
@@ -39,4 +40,12 @@ public class LockData implements Serializable {
 		return mac;
 	}
 	
+	/**
+	 * Returns the service associated with the mac
+	 * 
+	 */
+	public long getService() {
+		return service;
+	}
+
 }
