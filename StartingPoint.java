@@ -226,12 +226,27 @@ public class StartingPoint {
 					TrayIcon.MessageType.WARNING);
 		} else {
 			TrayOperations.toGreen("Smart Lock not configured");
-			TrayOperations.displayMessage("PROSecurity - Started", "PROSecurity has started operating in normal mode.",
-					TrayIcon.MessageType.INFO);
+			ObjectInputStream ois;
+			LockData lockData;
+			try {
+				ois = new ObjectInputStream(new FileInputStream(loginDatFile));
+				lockData = (LockData) ois.readObject();
+				SmartLockThread smartLockThread = new SmartLockThread(lockData);
+				VolatileBag.smartLockThread = smartLockThread;
+				smartLockThread.start();
+			} catch (FileNotFoundException e) {
+				logger.warning("FileNotFoundException caught while loading Login data: " + e.getMessage());
+			} catch (IOException e) {
+				logger.warning("IOException caught while loading Login data: " + e.getMessage());
+			} catch (ClassNotFoundException e) {
+				logger.warning("ClassNotFoundException caught while loading Login data: " + e.getMessage());
+			}
 		}
 
 		try {
 			serverThread.join();
+			searchThread.join();
+			VolatileBag.smartLockThread.join();
 			// TODO Wait for other threads
 		} catch (InterruptedException e) {
 			logger.severe("Main thread has been interrupted: " + e.getMessage());

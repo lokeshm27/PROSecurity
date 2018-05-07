@@ -21,6 +21,7 @@ public class ExitActionListener implements ActionListener{
 				// TODO Clean up operations
 				VolatileBag.serverThread.close();
 				VolatileBag.searchThread.cancel();
+				VolatileBag.smartLockThread.cancel();
 				System.exit(0);
 			}
 			logger.info("Exit declined.");

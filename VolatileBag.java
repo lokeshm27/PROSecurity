@@ -4,6 +4,7 @@ public class VolatileBag {
 	// Threads
 	public volatile static ServerThread serverThread;
 	public volatile static SearchThread searchThread;
+	public volatile static SmartLockThread smartLockThread;
 	
 	//KeyStorage
 	public volatile static KeyStorage keyStorage;

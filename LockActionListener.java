@@ -225,12 +225,14 @@ public class LockActionListener implements ActionListener {
 		int i = 0;
 		while (i < uuid.length) {
 			try {
+				System.out.println(i + 1 + ": Checking for Service: " + uuid[i]);
 				logger.info(i + 1 + ": Checking for Service: " + uuid[i]);
 				int j = 0;
 				while (j < 3) {
 					if (!BTOperations.checkRange(mac, uuid[i]))
 						break;
 					j++;
+					System.out.println("Success time " + j + 1 + " Sleep time 2");
 					logger.info("Success time " + j + 1 + " Sleep time 2");
 					Thread.sleep(500);
 				}
@@ -260,7 +262,7 @@ public class LockActionListener implements ActionListener {
 			});
 			return;
 		}
-
+		
 		if (winSelected) {
 			lockData = new LockData(LockData.WIN_LOCK, mac, service);
 		} else {
@@ -268,6 +270,10 @@ public class LockActionListener implements ActionListener {
 		}
 
 		try {
+			VolatileBag.smartLockThread.cancel();
+			VolatileBag.smartLockThread = new SmartLockThread(lockData);
+			VolatileBag.smartLockThread.start();
+			
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(resPath + "\\login.dat"));
 			oos.writeObject(lockData);
 			oos.close();
