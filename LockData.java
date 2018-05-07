@@ -22,6 +22,7 @@ public class LockData implements Serializable {
 	public LockData(int lockType, String mac, long service) {
 		this.mac = mac;
 		this.lockType = lockType;
+		this.service = service;
 	}
 	
 	/**
