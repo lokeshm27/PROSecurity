@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.logging.Logger;
-
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -31,21 +29,22 @@ import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
-public class LockActionListener implements ActionListener{
+public class LockActionListener implements ActionListener {
 
 	public final static String loggerName = "default.runtime";
 	public final static String resPath = StartingPoint.resPath;
 	String mac;
-	Logger logger;	
+	Logger logger;
 	Display display;
-	Shell shell;
+	Shell shell, messageBox;
 	Button enableButton;
-	Group bluetooth,options;
-	Label deviceLabel,lockLabel;
+	Group bluetooth, options;
+	Label deviceLabel, lockLabel;
 	Button chooseButton, clearButton;
 	Button winOption, proOption;
 	Button saveButton, cancelButton;
-	
+	Boolean working = false, winSelected = false;
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		logger = Logger.getLogger(loggerName);
@@ -57,69 +56,73 @@ public class LockActionListener implements ActionListener{
 
 			@Override
 			public void handleEvent(Event event) {
-				if (SOptions.showConfirm(shell, "Confirm - PROSecurity",
-						"Are you sure to go back and discard any changes?")) {
-					event.doit = true;
+				if (!working) {
+					if (SOptions.showConfirm(shell, "Confirm - PROSecurity",
+							"Are you sure to go back and discard any changes?")) {
+						event.doit = true;
+					} else {
+						event.doit = false;
+					}
 				} else {
 					event.doit = false;
 				}
 			}
 		});
-		
+
 		GridLayout parentLayout = new GridLayout();
 		parentLayout.numColumns = 3;
 		parentLayout.marginWidth = 20;
 		parentLayout.marginHeight = 20;
 		parentLayout.verticalSpacing = 20;
 		shell.setLayout(parentLayout);
-		
+
 		enableButton = new Button(shell, SWT.CHECK);
 		enableButton.setText("Enable Smart Lock");
 		GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
 		gridData.horizontalSpan = 3;
 		enableButton.setLayoutData(gridData);
 		enableButton.addSelectionListener(enableAdapter);
-		
+
 		options = new Group(shell, SWT.NONE);
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalSpan = 3;
 		options.setLayoutData(gridData);
-		
+
 		GridLayout optionsLayout = new GridLayout();
 		optionsLayout.numColumns = 4;
 		options.setSize(430, 200);
 		options.setLayout(optionsLayout);
-		
+
 		lockLabel = new Label(options, SWT.NONE);
 		lockLabel.setText("Lock using: ");
-		
+
 		winOption = new Button(options, SWT.RADIO);
 		winOption.setText("Windows lock screen");
-		
+
 		proOption = new Button(options, SWT.RADIO);
 		proOption.setText("Custom lock screen");
-		
+
 		bluetooth = new Group(shell, SWT.NONE);
 		bluetooth.setText(" Select Bluetooth device ");
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalSpan = 3;
 		bluetooth.setLayoutData(gridData);
-		
+
 		GridLayout bluetoothLayout = new GridLayout();
 		bluetoothLayout.numColumns = 4;
 		bluetooth.setSize(430, 200);
 		bluetooth.setLayout(bluetoothLayout);
-		
+
 		new Label(bluetooth, SWT.NONE).setText("Bluetooth device: ");
-		
+
 		deviceLabel = new Label(bluetooth, SWT.NONE);
 		deviceLabel.setText("No Device Selected");
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		gridData.grabExcessHorizontalSpace = true;
 		deviceLabel.setLayoutData(gridData);
-		
+
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		chooseButton = new Button(bluetooth, SWT.PUSH);
 		chooseButton.setText(" Choose ");
@@ -131,20 +134,20 @@ public class LockActionListener implements ActionListener{
 		clearButton.setText(" Clear ");
 		clearButton.setLayoutData(gridData);
 		clearButton.addSelectionListener(clearAdapter);
-		
+
 		cancelButton = new Button(shell, SWT.PUSH);
 		cancelButton.setText(" Cancel ");
 		cancelButton.addSelectionListener(cancelAdapter);
-		
+
 		saveButton = new Button(shell, SWT.PUSH);
 		saveButton.setText(" Save ");
 		gridData = new GridData(GridData.HORIZONTAL_ALIGN_END);
 		gridData.horizontalSpan = 2;
 		saveButton.setLayoutData(gridData);
 		saveButton.addSelectionListener(saveAdapter);
-		
+
 		loadData();
-		
+
 		Rectangle screenSize = display.getPrimaryMonitor().getBounds();
 		shell.setLocation((screenSize.width - shell.getBounds().width) / 2,
 				(screenSize.height - shell.getBounds().height) / 2);
@@ -157,20 +160,20 @@ public class LockActionListener implements ActionListener{
 		}
 		display.dispose();
 	}
-	
+
 	/**
 	 * Loads data from dat file and updates UI
 	 */
 	void loadData() {
 		File datFile = new File(resPath + "\\login.dat");
-		if(datFile.exists()) {
+		if (datFile.exists()) {
 			try {
 				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(datFile));
 				LockData lockData = (LockData) ois.readObject();
 				ois.close();
-				
+
 				enableButton.setSelection(true);
-				if(lockData.getLockType() == LockData.WIN_LOCK) {
+				if (lockData.getLockType() == LockData.WIN_LOCK) {
 					winOption.setSelection(true);
 				} else {
 					proOption.setSelection(true);
@@ -191,11 +194,14 @@ public class LockActionListener implements ActionListener{
 			setEnabled(bluetooth, false);
 		}
 	}
-	
+
 	/**
 	 * Enables or disables components recursively
-	 * @param ctrl Parent control
-	 * @param enabled boolean enable or disable
+	 * 
+	 * @param ctrl
+	 *            Parent control
+	 * @param enabled
+	 *            boolean enable or disable
 	 */
 	private void setEnabled(Control ctrl, boolean enabled) {
 		if (ctrl instanceof Composite) {
@@ -207,29 +213,81 @@ public class LockActionListener implements ActionListener{
 			ctrl.setEnabled(enabled);
 		}
 	}
-	
+
 	/**
 	 * Saves data into the dat file
 	 */
 	private void saveData() {
-		LockData lockData = null;
-		if(winOption.getSelection()) {
-			lockData = new LockData(LockData.WIN_LOCK, mac);
-		} else {
-			lockData = new LockData(LockData.PRO_LOCK, mac);
+
+		LockData lockData;
+		long service = 0;
+		long[] uuid = BTOperations.getUUIDs();
+		int i = 0;
+		while (i < uuid.length) {
+			try {
+				logger.info(i + 1 + ": Checking for Service: " + uuid[i]);
+				int j = 0;
+				while (j < 3) {
+					if (!BTOperations.checkRange(mac, uuid[i]))
+						break;
+					j++;
+					logger.info("Success time " + j + 1 + " Sleep time 2");
+					Thread.sleep(500);
+				}
+				if (j == 3) {
+					service = uuid[i];
+					break;
+				}
+				i++;
+			} catch (InterruptedException e) {
+				logger.warning("newSafe thread was interrupted using sleep time 2");
+			}
 		}
-		
+
+		if (i == uuid.length) {
+			display.asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					SOptions.showError(messageBox, "PROSecurity -Error",
+							"Failed to configure selected bluetooth device. Make sure the device is turned on and is within the range.\n"
+									+ "Press try again");
+					logger.info("Configurationg failed. Didn't respond for any services.");
+					working = false;
+					saveButton.setEnabled(true);
+					cancelButton.setEnabled(true);
+					messageBox.dispose();
+				}
+			});
+			return;
+		}
+
+		if (winSelected) {
+			lockData = new LockData(LockData.WIN_LOCK, mac, service);
+		} else {
+			lockData = new LockData(LockData.PRO_LOCK, mac, service);
+		}
+
 		try {
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(resPath + "\\login.dat"));
 			oos.writeObject(lockData);
 			oos.close();
+
+			display.asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					SOptions.showInformation(shell, "PROSecurity - Success", "Save operation complete");
+					working = false;
+					messageBox.dispose();
+					shell.dispose();
+				}
+			});
 		} catch (FileNotFoundException e) {
 			logger.warning("FileNotFoundException caught while saving data");
 		} catch (IOException e) {
 			logger.warning("IOException caught while saving data");
 		}
 	}
-	
+
 	/**
 	 * SelectionAdapter for choose button
 	 */
@@ -244,7 +302,7 @@ public class LockActionListener implements ActionListener{
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
 			busy = true;
-			
+
 			dialog = new Shell(shell, SWT.PRIMARY_MODAL);
 			dialog.setText("Choose a Device - PROSecurity");
 			GridLayout layout = new GridLayout();
@@ -318,7 +376,7 @@ public class LockActionListener implements ActionListener{
 					(screenSize.height - dialog.getBounds().height) / 2);
 			dialog.open();
 			loadList();
-			
+
 		}
 
 		private void selectAction() {
@@ -379,7 +437,6 @@ public class LockActionListener implements ActionListener{
 		}
 	};
 
-	
 	/**
 	 * SelectionAdapter for clear button
 	 */
@@ -391,51 +448,94 @@ public class LockActionListener implements ActionListener{
 			mac = null;
 		}
 	};
-	
-	
+
 	/**
 	 * SelectionAdapter for cancel button
 	 */
 	private SelectionAdapter cancelAdapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
-			if(SOptions.showConfirm(shell, "PROSecurity - Confirm", "Are you sure to cancel?\nChanges may not be saved")) {
+			if (SOptions.showConfirm(shell, "PROSecurity - Confirm",
+					"Are you sure to cancel?\nChanges may not be saved")) {
 				shell.dispose();
 			}
 		}
 	};
-	
+
 	/**
 	 * SelectionAdapter for SaveButton
 	 */
 	private SelectionAdapter saveAdapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent arg0) {
-			if(enableButton.getSelection()) {
-				if(mac == null || mac.isEmpty()) {
+			working = true;
+			cancelButton.setEnabled(false);
+			saveButton.setEnabled(false);
+
+			if (enableButton.getSelection()) {
+				if (mac == null || mac.isEmpty()) {
 					SOptions.showError(shell, "PROSecurity - Error", "Please select a Bluetooth device");
+					working = false;
+					saveButton.setEnabled(true);
+					cancelButton.setEnabled(true);
 					return;
 				}
-				saveData();
+				if(winOption.getSelection()) {
+					winSelected = true;
+				} else {
+					winSelected = false;
+				}
+				messageBox = new Shell(shell, SWT.PRIMARY_MODAL | SWT.TITLE | SWT.BORDER);
+				messageBox.setText("Saving data - PROSecurity");
+				GridLayout layout = new GridLayout();
+				layout.numColumns = 1;
+				layout.marginWidth = 20;
+				layout.marginHeight = 20;
+				messageBox.setLayout(layout);
+
+				new Label(messageBox, SWT.NONE).setText("Please wait...\nConfiguring device. This may take few seconds."
+						+ "\n\nMake sure that bluetooth device is turned on and is within the range.");
+				Thread saveThread = new Thread(new Runnable() {
+
+					@Override
+					public void run() {
+						saveData();
+					}
+				});
+				messageBox.pack();
+				Rectangle screenSize = display.getPrimaryMonitor().getBounds();
+				messageBox.setLocation((screenSize.width - messageBox.getBounds().width) / 2,
+						(screenSize.height - messageBox.getBounds().height) / 2);
+				messageBox.open();
+				saveThread.start();
+
+				while (!messageBox.isDisposed() && saveThread.isAlive()) {
+					if (!messageBox.getDisplay().readAndDispatch()) {
+						messageBox.getDisplay().sleep();
+					}
+				}
+				messageBox.dispose();
+
 			} else {
 				File datFile = new File(resPath + "\\login.dat");
-				int i=0;
-				if(datFile.exists() && i < 200) {
+				int i = 0;
+				if (datFile.exists() && i < 200) {
 					datFile.delete();
 				}
+				SOptions.showInformation(shell, "PROSecurity - Success", "Save operation complete");
+				shell.dispose();
 			}
-			shell.dispose();
+			working = false;
 		}
 	};
-	
-	
+
 	/**
 	 * SelectAdapter for enable option
 	 */
 	private SelectionAdapter enableAdapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent event) {
-			if(enableButton.getSelection()) {
+			if (enableButton.getSelection()) {
 				lockLabel.setEnabled(true);
 				winOption.setEnabled(true);
 				proOption.setEnabled(true);
@@ -455,5 +555,5 @@ public class LockActionListener implements ActionListener{
 			}
 		}
 	};
-	
+
 }
